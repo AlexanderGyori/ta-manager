@@ -1,0 +1,45 @@
+﻿<html>
+    <head>
+        <title>TA Manager</title>
+        <link href="libraries/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="courses.css" rel="stylesheet" />
+        <script type="text/javascript" src="libraries/knockout-3.4.1/knockout-3.4.1.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Courses</h1>
+            <p>Add a filter here</p>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Course Code</th>
+                        <th>Title</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Lab</th>
+                        <th>Active</th>
+                        <th>Edit</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: viewModel.courseList">
+                    <tr>
+                        <td data-bind="text: courseCode"></td>
+                        <td data-bind="text: title"></td>
+                        <td data-bind="text: startDate"></td>
+                        <td data-bind="text: endDate"></td>
+                        <td><span data-bind="css: { 'glyphicon-ok': hasLab, 'glyphicon-remove': !hasLab }" class="glyphicon"></span></td>
+                        <td><span data-bind="css: { 'glyphicon-ok': isActive, 'glyphicon-remove': !isActive }" class="glyphicon"></span></td>
+                        <td data-bind="visible: courseId"><button class="btn btn-default"><span class="glyphicon glyphicon-edit"></span></button></td>
+                        <td data-bind="visible: courseId"><button class="btn btn-default"><span class="glyphicon glyphicon-trash"></span></button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div>
+                <button class="btn btn-default"><span class="glyphicon glyphicon-plus" onclick="addCourse();"></span></button>
+            </div>
+            
+        </div>
+    </body>
+</html>
+<script type="text/javascript" src="courses.js"></script> 
