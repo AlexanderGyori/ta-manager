@@ -30,7 +30,30 @@ taManager.get('/getAllCourses', function (req, res) {
 taManager.post('/addCourse', function (req, res) {
     var course = req.body;
     db.query('INSERT INTO thesis."Course"("CourseCode", "Title", "StartDate", "EndDate", "HasLab", "IsActive") ' +
-        'VALUES ($1, $2, $3, $4, $5, $6);', [course.courseCode, course.title, null, null, course.hasLab, course.isActive])
+        'VALUES ($1, $2, $3, $4, $5, $6);', [course.courseCode, course.title, null, null, course.hasLab, course.isActive]) // TODO: Add support for dates
+        .then(function (data) {
+            res.send();
+        })
+        .catch(function (error) {
+            console.log('ERROR: ', error);
+        });
+});
+
+taManager.post('/editCourse', function (req, res) {
+    var course = req.body;
+    db.query('UPDATE thesis."Course" SET "CourseCode" = $1, "Title" = $2, "StartDate" = $3, "EndDate" = $4, "HasLab" = $5, "IsActive" = $6 WHERE "CourseId" = $7', 
+        [course.courseCode, course.title, null, null, course.hasLab, course.isActive, course.courseId])
+    .then(function (data) {
+        res.send();
+    })
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
+});
+
+taManager.post('/removeCourse', function (req, res) {
+    var course = req.body;
+    db.query('DELETE FROM thesis."Course" WHERE "CourseId" = $1', course.courseId)
         .then(function (data) {
             res.send();
         })
