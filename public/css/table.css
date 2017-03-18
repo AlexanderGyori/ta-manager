@@ -1,0 +1,32 @@
+﻿.columnHeader {
+    background-color: #1e1e1e;
+    color: white;
+}
+
+.columnHeader:hover {
+    background-color: #337AB7;
+    
+    color: white;
+    cursor: pointer;
+}
+
+.parentRow {
+    background-color: #666666;
+    color: white;
+}
+
+.childRow {
+    background-color: lightgrey;
+}
+
+.childTable {
+    margin: 0px;
+}
+
+.collapsing {
+    -webkit-transition: none;
+    transition: height 0.01s;
+}
+
+.table {
+}

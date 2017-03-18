@@ -1,0 +1,265 @@
+﻿<html>
+    <head>
+        <title>TA Manager</title>
+        <link href="libraries/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="css/table.css" rel="stylesheet" />
+        <link href="css/modal.css" rel="stylesheet" />
+        <script type="text/javascript" src="libraries/knockout-3.4.1/knockout-3.4.1.js"></script>
+        <script type="text/javascript" src="libraries/jquery-3.1.1/jquery-3.1.1.min.js"></script>
+        <script type="text/javascript" src="libraries/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="js/table-tools.js"></script>
+        <script>
+            $(function(){
+                $("#navbar").load("navbar.html");
+            });
+        </script>
+    </head>
+    <body>
+        <div id="navbar"></div>
+        <div class="container">
+            <h1>Supervisors</h1>
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-md-1 control-label">Filter:</label>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" >
+                                    <span data-bind="text: searchColumnLabel"></span>
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" data-bind="click: function () { setSearchColumn('name'); }">Name</a></li>
+                                    <li><a href="#" data-bind="click: function () { setSearchColumn('email'); }">Email</a></li>
+                                </ul>
+                            </div>
+                            <input id="searchBar" type="text" class="form-control" data-bind="textInput: searchTerm" />
+                            <div class="input-group-btn">
+                                <button class="btn btn-default" type="button" data-bind="click: clearSearchTerm">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('name'); }">Name</th>
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('email'); }">Email</th>
+                        <th class="columnHeader">Edit</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: { data: supervisorList, as: 'supervisor' }">
+                    <!-- ko if: isVisible -->
+                    <tr class="parentRow">
+                        <td data-toggle="collapse" data-bind="text: name, attr: { 'data-target': '#taList' + $index()}"></td>
+                        <td data-toggle="collapse" data-bind="text: email, attr: { 'data-target': '#taList' + $index()}"></td>
+                        <td>
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-default dropdown-toggle dropdown" data-toggle="dropdown">
+                                    <span class="glyphicon glyphicon-menu-hamburger"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" data-bind="click: $parent.displayEditSupervisorModal">Edit Supervisor</a></li>
+                                    <li><a href="#" data-bind="click: $parent.displayAssignTaModal">Assign TA</a></li>
+                                    <li class="divider"></li>
+                                    <li><a href="#" data-bind="click: $parent.displayRemoveSupervisorModal">Remove Supervisor</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="collapse" data-bind="attr: { id: 'taList' + $index()}">
+                        <td colspan="3">
+                            <table class="table childTable" data-bind="foreach: { data: supervisor.taList, as: 'ta' }">
+                                <tr class="childRow">
+                                    <td data-bind="text: ta.userId"></td>
+                                    <td data-bind="text: ta.name"></td>
+                                    <td data-bind="text: ta.email"></td>
+                                    <td data-bind="text: ta.studentType"></td>
+                                    <td data-bind="text: ta.studentNumber"></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- /ko -->
+                </tbody>
+            </table>
+            <div class="pull-right">
+                <button class="btn btn-default" data-bind="click: displayAddSupervisorModal"><span class="glyphicon glyphicon-plus"></span></button>
+            </div>
+        </div>
+        <div id="addSupervisorModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-bind="click: closeAddSupervisorModal"><span>&times;</span></button>
+                        <h4 class="modal-title">Add a Supervisor</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>First Name</label>
+                                    <input type="text" class="form-control" data-bind="value: addSupervisorModal.firstName" />
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Last Name</label>
+                                    <input type="text" class="form-control" data-bind="value: addSupervisorModal.lastName" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>Email</label>
+                                    <input type="text" class="form-control" data-bind="value: addSupervisorModal.email" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bind="click: function () { addSupervisor(addSupervisorModal) } ">Add</button>
+                        <button type="button" class="btn btn-default" data-bind="click: closeAddSupervisorModal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="editSupervisorModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-bind="click: closeEditSupervisorModal"><span>&times;</span></button>
+                        <h4 class="modal-title">Edit a Supervisor</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>First Name</label>
+                                    <input type="text" class="form-control" data-bind="value: editSupervisorModal.firstName" placeholder="Required" />
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Last Name</label>
+                                    <input type="text" class="form-control" data-bind="value: editSupervisorModal.lastName" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>Email</label>
+                                    <input type="text" class="form-control" data-bind="value: editSupervisorModal.email" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bind="click: function () { editSupervisor(editSupervisorModal) }">Save</button>
+                        <button type="button" class="btn btn-default" data-bind="click: closeEditSupervisorModal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="removeSupervisorModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-bind="click: closeRemoveSupervisorModal"><span>&times;</span></button>
+                        <h4 class="modal-title">Remove a Supervisor</h4>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete this supervisor?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bind="click: function () { removeSupervisor(removeSupervisorModal) }">Delete</button>
+                        <button type="button" class="btn btn-default" data-bind="click: closeRemoveSupervisorModal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="assignTaModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="container-fluid">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-bind="click: closeAssignTaModal"><span>&times;</span></button>
+                            <h4 class="modal-title">Assign TA to Supervisor</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <h3>Unassigned</h3>
+                                            <div class="form-horizontal">
+                                                <div class="form-group">
+                                                    <label class="col-md-2 control-label">Filter:</label>
+                                                    <div class="col-md-10">
+                                                        <div class="input-group">
+                                                            <div class="input-group-btn">
+                                                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                                    <span data-bind="text: assignTaModal.searchColumnLabel"></span>
+                                                                    <span class="caret"></span>
+                                                                </button>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a href="#" data-bind="click: function () { assignTaModal.setSearchColumn('userId'); }">User Id</a></li>
+                                                                    <li><a href="#" data-bind="click: function () { assignTaModal.setSearchColumn('name'); }">Name</a></li>
+                                                                    <li><a href="#" data-bind="click: function () { assignTaModal.setSearchColumn('email'); }">Email</a></li>
+                                                                    <li><a href="#" data-bind="click: function () { assignTaModal.setSearchColumn('studentNumber'); }">Student Number</a></li>
+                                                                </ul>
+                                                            </div>
+                                                            <input id="taAssignmentSearchBar" type="text" class="form-control" data-bind="textInput: assignTaModal.searchTerm" />
+                                                            <div class="input-group-btn">
+                                                                <button class="btn btn-default" type="button" data-bind="click: assignTaModal.clearSearchTerm">Clear</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <table class="table" style="">
+                                                <tbody data-bind="foreach: { data: assignTaModal.unassignedTas, as: 'ta' }">
+                                                    <!-- ko if: isVisible -->
+                                                    <tr class="parentRow">
+                                                        <td data-bind="text: ta.userId"></td>
+                                                        <td data-bind="text: ta.name"></td>
+                                                        <td data-bind="text: ta.email"></td>
+                                                        <td data-bind="text: ta.studentNumber"></td>
+                                                        <td><button class="btn btn-default pull-right" data-bind="click: $parent.assignTa"><span class="glyphicon glyphicon-chevron-right"></span></button></td>
+                                                    </tr>
+                                                    <!-- /ko -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <h3>Assigned</h3>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <table class="table" style="">
+                                                <tbody data-bind="foreach: { data: assignTaModal.assignedTas, as: 'ta' }">
+                                                    <tr class="parentRow">
+                                                        <td><button class="btn btn-default pull-left" data-bind="click: $parent.unassignTa"><span class="glyphicon glyphicon-chevron-left"></span></button></td>
+                                                        <td data-bind="text: ta.userId"></td>
+                                                        <td data-bind="text: ta.name"></td>
+                                                        <td data-bind="text: ta.email"></td>
+                                                        <td data-bind="text: ta.studentNumber"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+<script type="text/javascript" src="js/supervisors.js"></script>

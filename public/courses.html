@@ -1,43 +1,111 @@
 ﻿<html>
     <head>
         <title>TA Manager</title>
-        <link href="libraries/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="courses.css" rel="stylesheet" />
+        <link href="libraries/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="css/table.css" rel="stylesheet" />
+        <link href="css/modal.css" rel="stylesheet" />
         <script type="text/javascript" src="libraries/knockout-3.4.1/knockout-3.4.1.js"></script>
         <script type="text/javascript" src="libraries/jquery-3.1.1/jquery-3.1.1.min.js"></script>
         <script type="text/javascript" src="libraries/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="js/table-tools.js"></script>
+        <script type="text/javascript" src="js/date-tools.js"></script>
+        <script type="text/javascript" src="libraries/pdfmake/pdfmake.min.js"></script>
+        <script type="text/javascript" src="libraries/pdfmake/vfs_fonts.js"></script>
+        <script>
+            $(function(){
+                $("#navbar").load("navbar.html");
+            });
+        </script> 
     </head>
     <body>
+        <div id="navbar"></div>
         <div class="container">
             <h1>Courses</h1>
-            <p>Add a filter here</p>
-            <table class="table table-striped">
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-md-1 control-label">Filter:</label>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                    <span data-bind="text: searchColumnLabel"></span>
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" data-bind="click: function () { setSearchColumn('courseCode'); }">Course Code</a></li>
+                                    <li><a href="#" data-bind="click: function () { setSearchColumn('title'); }">Title</a></li>
+                                </ul>
+                            </div>
+                            <input id="searchBar" type="text" class="form-control" data-bind="textInput: searchTerm" />
+                            <div class="input-group-btn">
+                                <button class="btn btn-default" type="button" data-bind="click: clearSearchTerm">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <table class="table">
                 <thead>
                     <tr>
-                        <th>Course Code</th>
-                        <th>Title</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Lab</th>
-                        <th>Active</th>
-                        <th>Edit</th>
-                        <th>Remove</th>
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('courseCode'); }">Course Code</th>
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('title'); }">Title</th>
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('studentCount'); }">Students</th>
+                        <th class="columnHeader">Start Term</th> <!-- TODO: implement! -->
+                        <th class="columnHeader">End Term</th> <!-- TODO: implement! -->
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('hasLab'); }">Lab</th>
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('isActive'); }">Active</th>
+                        <th class="columnHeader">Edit</th>
                     </tr>
                 </thead>
-                <tbody data-bind="foreach: courseList">
-                    <tr>
-                        <td data-bind="text: courseCode"></td>
-                        <td data-bind="text: title"></td>
-                        <td data-bind="text: startDate"></td>
-                        <td data-bind="text: endDate"></td>
-                        <td><span data-bind="css: { 'glyphicon-ok': hasLab, 'glyphicon-remove': !hasLab }" class="glyphicon"></span></td>
-                        <td><span data-bind="css: { 'glyphicon-ok': isActive, 'glyphicon-remove': !isActive }" class="glyphicon"></span></td>
-                        <td data-bind="visible: courseId"><button class="btn btn-default" data-bind="click: $parent.displayEditCourseModal"><span class="glyphicon glyphicon-edit"></span></button></td>
-                        <td data-bind="visible: courseId"><button class="btn btn-default" data-bind="click: $parent.displayRemoveCourseModal"><span class="glyphicon glyphicon-trash"></span></button></td>
+                <tbody data-bind="foreach: { data: courseList, as: 'course' }">
+                    <!-- ko if: isVisible -->
+                    <tr class="parentRow">
+                        <td data-toggle="collapse" data-bind="text: courseCode, attr: { 'data-target': '#taList' + $index()}"></td>
+                        <td data-toggle="collapse" data-bind="text: title, attr: { 'data-target': '#taList' + $index()}"></td>
+                        <td data-toggle="collapse" data-bind="text: studentCount, attr: { 'data-target': '#taList' + $index()}"><span class="badge"></span></td>
+                        <td data-toggle="collapse" data-bind="text: startDateTermYear, attr: { 'data-target': '#taList' + $index()}"></td>
+                        <td data-toggle="collapse" data-bind="text: endDateTermYear, attr: { 'data-target': '#taList' + $index()}"></td>
+                        <td data-toggle="collapse" data-bind="attr: { 'data-target': '#taList' + $index()}"><span data-bind="css: { 'glyphicon-ok': hasLab, 'glyphicon-remove': !hasLab }" class="glyphicon"></span></td>
+                        <td data-toggle="collapse" data-bind="attr: { 'data-target': '#taList' + $index()}"><span data-bind="css: { 'glyphicon-ok': isActive, 'glyphicon-remove': !isActive }" class="glyphicon"></span></td>
+                        <td>
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-default dropdown-toggle dropdown" data-toggle="dropdown">
+                                    <span class="glyphicon glyphicon-menu-hamburger"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" data-bind="click: $parent.displayEditCourseModal">Edit course</a></li>
+                                    <li><a href="#" data-bind="click: $parent.displayAssignTaModal">Assign TA</a></li>
+                                    <li class="divider"></li>
+                                    <li><a href="#" data-bind="click: $parent.displayRemoveCourseModal">Remove course</a></li>
+                                </ul>
+                            </div>
+                        </td>
                     </tr>
+                    <tr class="collapse" data-bind="attr: { id: 'taList' + $index()}">
+                        <td colspan="8">
+                            <table class="table childTable" data-bind="foreach: { data: course.taList, as: 'ta' }">
+                                <tr class="childRow">
+                                    <td data-bind="text: ta.userId"></td>
+                                    <td data-bind="text: ta.name"></td>
+                                    <td data-bind="text: ta.email"></td>
+                                    <td data-bind="text: ta.studentType"></td>
+                                    <td data-bind="text: ta.studentNumber"></td>
+                                    <td data-bind="text: ta.assignType"></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- /ko -->
                 </tbody>
             </table>
-            <div>
+            <div class="pull-left">
+                <button class="btn btn-default" data-bind="click: testLogin"><span>Login</span></button>
+                <button class="btn btn-default" data-bind="click: testProfile"><span>View Profile</span></button>
+                <button class="btn btn-default" data-bind="click: testLogout"><span>Logout</span></button>
+            </div>
+            <div class="pull-right">
+                <button class="btn btn-default" data-bind="click: autoAssignTas"><span>Auto-Assign TAs</span></button>
+                <button class="btn btn-default" data-bind="click: pdfTest"><span>PDF TEST</span></button>
                 <button class="btn btn-default" data-bind="click: displayAddCourseModal"><span class="glyphicon glyphicon-plus"></span></button>
             </div>
         </div>
@@ -49,35 +117,75 @@
                         <h4 class="modal-title">Add a Course</h4>
                     </div>
                     <div class="modal-body">
-                        <div class="container col-md-12">
+                        <div class="container-fluid">
                             <div class="row">
-                                <div class="col-md-6" data-bind="css: {'has-error': addCourseModal.hasCourseCodeError }">
+                                <div class="col-md-6 form-group" data-bind="css: {'has-error': addCourseModal.hasCourseCodeError }">
                                     <label>Course Code</label>
                                     <input type="text" class="form-control" data-bind="value: addCourseModal.courseCode" placeholder="Required"/>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6 form-group">
                                     <label>Title</label>
                                     <input type="text" class="form-control" data-bind="value: addCourseModal.title" />
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <label>Start Date</label>
-                                    <input type="text" class="form-control" data-bind="value: addCourseModal.startDate" />
+                                <div class="col-md-6 form-group" data-bind="css: {'has-error': addCourseModal.hasDateError }">
+                                    <label>Start Term</label>
+                                    <div class="form-inline">
+                                        <div class="form-group">
+                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                <span data-bind="text: addCourseModal.startDateTermLabel"></span>
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a href="#" data-bind="click: function () { addCourseModal.setStartDateTerm(''); }">Term</a></li>
+                                                <li><a href="#" data-bind="click: function () { addCourseModal.setStartDateTerm('Fall'); }">Fall</a></li>
+                                                <li><a href="#" data-bind="click: function () { addCourseModal.setStartDateTerm('Winter'); }">Winter</a></li>
+                                                <li><a href="#" data-bind="click: function () { addCourseModal.setStartDateTerm('Summer'); }">Summer</a></li>
+                                            </ul>
+                                            <input type="number" placeholder="Year" class="form-control" data-bind="value: addCourseModal.startDateYear" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label>End Date</label>
-                                    <input type="text" class="form-control" data-bind="value: addCourseModal.endDate" />
+                                <div class="col-md-6 form-group" data-bind="css: {'has-error': addCourseModal.hasDateError }">
+                                    <label>End Term</label>
+                                    <div class="form-inline">
+                                        <div class="form-group">
+                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                <span data-bind="text: addCourseModal.endDateTermLabel"></span>
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a href="#" data-bind="click: function () { addCourseModal.setEndDateTerm(''); }">Term</a></li>
+                                                <li><a href="#" data-bind="click: function () { addCourseModal.setEndDateTerm('Fall'); }">Fall</a></li>
+                                                <li><a href="#" data-bind="click: function () { addCourseModal.setEndDateTerm('Winter'); }">Winter</a></li>
+                                                <li><a href="#" data-bind="click: function () { addCourseModal.setEndDateTerm('Summer'); }">Summer</a></li>
+                                            </ul>
+                                            <input type="number" placeholder="Year" class="form-control" data-bind="value: addCourseModal.endDateYear" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <label>Lab</label>
-                                    <input type="checkbox" class="form-control" data-bind="checked: addCourseModal.hasLab" />
+                                <div class="col-md-6 form-group">
+                                    <label>Number of Students</label>
+                                    <input type="number" class="form-control" data-bind="value: addCourseModal.studentCount" />
                                 </div>
-                                <div class="col-md-6">
-                                    <label>Active</label>
-                                    <input type="checkbox" class="form-control" data-bind="checked: addCourseModal.isActive" />
+                                <div class="col-md-6 form-group">
+                                    <div class="row">
+                                        <div class="checkbox col-md-12 form-group">
+                                            <label>
+                                                <input type="checkbox" data-bind="checked: addCourseModal.hasLab" />Lab
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="checkbox col-md-12 form-group">
+                                            <label>
+                                                <input type="checkbox" class="checkbox" data-bind="checked: addCourseModal.isActive" />Active
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -97,35 +205,75 @@
                         <h4 class="modal-title">Edit a Course</h4>
                     </div>
                     <div class="modal-body">
-                        <div class="container col-md-12">
+                        <div class="container-fluid">
                             <div class="row">
-                                <div class="col-md-6" data-bind="css: {'has-error': editCourseModal.hasCourseCodeError }">
+                                <div class="col-md-6 form-group" data-bind="css: {'has-error': editCourseModal.hasCourseCodeError }">
                                     <label>Course Code</label>
                                     <input type="text" class="form-control" data-bind="value: editCourseModal.courseCode" placeholder="Required" />
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6 form-group">
                                     <label>Title</label>
                                     <input type="text" class="form-control" data-bind="value: editCourseModal.title" />
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <label>Start Date</label>
-                                    <input type="text" class="form-control" data-bind="value: editCourseModal.startDate" />
+                                <div class="col-md-6 form-group" data-bind="css: {'has-error': editCourseModal.hasDateError }">
+                                    <label>Start Term</label>
+                                    <div class="form-inline">
+                                        <div class="form-group">
+                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                <span data-bind="text: editCourseModal.startDateTermLabel"></span>
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a href="#" data-bind="click: function () { editCourseModal.setStartDateTerm(''); }">Term</a></li>
+                                                <li><a href="#" data-bind="click: function () { editCourseModal.setStartDateTerm('Fall'); }">Fall</a></li>
+                                                <li><a href="#" data-bind="click: function () { editCourseModal.setStartDateTerm('Winter'); }">Winter</a></li>
+                                                <li><a href="#" data-bind="click: function () { editCourseModal.setStartDateTerm('Summer'); }">Summer</a></li>
+                                            </ul>
+                                            <input type="number" placeholder="Year" class="form-control" data-bind="value: editCourseModal.startDateYear" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label>End Date</label>
-                                    <input type="text" class="form-control" data-bind="value: editCourseModal.endDate" />
+                                <div class="col-md-6 form-group" data-bind="css: {'has-error': editCourseModal.hasDateError }">
+                                    <label>End Term</label>
+                                    <div class="form-inline">
+                                        <div class="form-group">
+                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                <span data-bind="text: editCourseModal.endDateTermLabel"></span>
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a href="#" data-bind="click: function () { editCourseModal.setEndDateTerm(''); }">Term</a></li>
+                                                <li><a href="#" data-bind="click: function () { editCourseModal.setEndDateTerm('Fall'); }">Fall</a></li>
+                                                <li><a href="#" data-bind="click: function () { editCourseModal.setEndDateTerm('Winter'); }">Winter</a></li>
+                                                <li><a href="#" data-bind="click: function () { editCourseModal.setEndDateTerm('Summer'); }">Summer</a></li>
+                                            </ul>
+                                            <input type="number" placeholder="Year" class="form-control" data-bind="value: editCourseModal.endDateYear" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <label>Lab</label>
-                                    <input type="checkbox" class="form-control" data-bind="checked: editCourseModal.hasLab" />
+                                <div class="col-md-6 form-group">
+                                    <label>Number of Students</label>
+                                    <input type="number" class="form-control" data-bind="value: editCourseModal.studentCount" />
                                 </div>
-                                <div class="col-md-6">
-                                    <label>Active</label>
-                                    <input type="checkbox" class="form-control" data-bind="checked: editCourseModal.isActive" />
+                                <div class="col-md-6 form-group">
+                                    <div class="row">
+                                        <div class="checkbox col-md-12 form-group">
+                                            <label>
+                                                <input type="checkbox" data-bind="checked: editCourseModal.hasLab" />Lab
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="checkbox col-md-12 form-group">
+                                            <label>
+                                                <input type="checkbox" class="checkbox" data-bind="checked: editCourseModal.isActive" />Active
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -154,7 +302,192 @@
                 </div>
             </div>
         </div>
+        <div id="assignTaModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="container-fluid">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-bind="click: closeAssignTaModal"><span>&times;</span></button>
+                            <h4 class="modal-title">Assign TA to Course</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <h3>Unassigned</h3>
+                                            <div class="form-horizontal">
+                                                <div class="form-group">
+                                                    <label class="col-md-2 control-label">Filter:</label>
+                                                    <div class="col-md-10">
+                                                        <div class="input-group">
+                                                            <div class="input-group-btn">
+                                                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                                    <span data-bind="text: assignTaModal.searchColumnLabel"></span>
+                                                                    <span class="caret"></span>
+                                                                </button>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a href="#" data-bind="click: function () { assignTaModal.setSearchColumn('userId'); }">User Id</a></li>
+                                                                    <li><a href="#" data-bind="click: function () { assignTaModal.setSearchColumn('name'); }">Name</a></li>
+                                                                    <li><a href="#" data-bind="click: function () { assignTaModal.setSearchColumn('email'); }">Email</a></li>
+                                                                    <li><a href="#" data-bind="click: function () { assignTaModal.setSearchColumn('studentNumber'); }">Student Number</a></li>
+                                                                </ul>
+                                                            </div>
+                                                            <input id="taAssignmentSearchBar" type="text" class="form-control" data-bind="textInput: assignTaModal.searchTerm" />
+                                                            <div class="input-group-btn">
+                                                                <button class="btn btn-default" type="button" data-bind="click: assignTaModal.clearSearchTerm">Clear</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <table class="table" style="">
+                                                <tbody data-bind="foreach: { data: assignTaModal.unassignedTas, as: 'ta' }">
+                                                    <!-- ko if: isVisible -->
+                                                    <tr class="parentRow">
+                                                        <td data-bind="text: ta.userId"></td>
+                                                        <td data-bind="text: ta.name"></td>
+                                                        <td data-bind="text: ta.email"></td>
+                                                        <td class="btn-group">
+                                                            <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.toggleAssignType(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'FULL' }">Full</button>
+                                                            <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.toggleAssignType(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'HALF' }">Half</button>
+                                                        </td>
+                                                        <td><button class="btn btn-default pull-right" data-bind="click: function () { $parent.assignTa(ta.userId, $parent.assignTaModal.courseId(), ta.assignType(), true, function () { $parent.assignTaModal.moveTaToAssigned(ta.userId); }); }"><span class="glyphicon glyphicon-chevron-right"></span></button></td>
+                                                    </tr>
+                                                    <!-- /ko -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="pull-left"><h3>Assigned</h3></div>
+                                            <div class="pull-right">
+                                                <a tabindex="0" class="btn btn-default popoverBtn" role="button" data-toggle="popover" data-trigger="focus" title="Recommended Assignments">
+                                                    <span class="glyphicon glyphicon-info-sign"></span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <table class="table" style="">
+                                                <tbody data-bind="foreach: { data: assignTaModal.assignedTas, as: 'ta' }">
+                                                    <tr class="parentRow">
+                                                        <td><button class="btn btn-default pull-left" data-bind="click: $parent.unassignTa"><span class="glyphicon glyphicon-chevron-left"></span></button></td>
+                                                        <td data-bind="text: ta.userId"></td>
+                                                        <td data-bind="text: ta.name"></td>
+                                                        <td data-bind="text: ta.email"></td>
+                                                        <td class="btn-group">
+                                                            <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.updateCourseTaAssignment(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'FULL' }">Full</button>
+                                                            <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.updateCourseTaAssignment(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'HALF' }">Half</button>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="autoAssignModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-bind="click: closeAutoAssignModal"><span>&times;</span></button>
+                        <h4 class="modal-title">Auto-Assign TAs</h4>
+                    </div>
+                    <div class="modal-body">
+                        <!-- ko if: !!autoAssignModal.courseList().length -->
+                        <span>Are you sure you wish to proceed with the following assignments?</span>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th class="columnHeader">Course Code</th>
+                                    <th class="columnHeader">Title</th>
+                                    <th class="columnHeader">Students</th>
+                                    <th class="columnHeader">Start Term</th> 
+                                    <th class="columnHeader">End Term</th> 
+                                    <th class="columnHeader">Lab</th>
+                                    <th class="columnHeader">Active</th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: { data: autoAssignModal.courseList, as: 'course' }">
+                                <tr class="parentRow">
+                                    <td data-toggle="collapse" data-bind="text: courseCode, attr: { 'data-target': '#autoAssignTaList' + $index()}"></td>
+                                    <td data-toggle="collapse" data-bind="text: title, attr: { 'data-target': '#autoAssignTaList' + $index()}"></td>
+                                    <td data-toggle="collapse" data-bind="text: studentCount, attr: { 'data-target': '#autoAssignTaList' + $index()}"><span class="badge"></span></td>
+                                    <td data-toggle="collapse" data-bind="text: startDateTermYear, attr: { 'data-target': '#autoAssignTaList' + $index()}"></td>
+                                    <td data-toggle="collapse" data-bind="text: endDateTermYear, attr: { 'data-target': '#autoAssignTaList' + $index()}"></td>
+                                    <td data-toggle="collapse" data-bind="attr: { 'data-target': '#autoAssignTaList' + $index()}"><span data-bind="css: { 'glyphicon-ok': hasLab, 'glyphicon-remove': !hasLab }" class="glyphicon"></span></td>
+                                    <td data-toggle="collapse" data-bind="attr: { 'data-target': '#autoAssignTaList' + $index()}"><span data-bind="css: { 'glyphicon-ok': isActive, 'glyphicon-remove': !isActive }" class="glyphicon"></span></td>
+                                </tr>
+                                <tr class="collapse in" data-bind="attr: { id: 'autoAssignTaList' + $index()}">
+                                    <td colspan="8">
+                                        <table class="table childTable" data-bind="foreach: { data: course.taList, as: 'ta' }">
+                                            <tr class="childRow">
+                                                <td data-bind="text: ta.userId"></td>
+                                                <td data-bind="text: ta.name"></td>
+                                                <td data-bind="text: ta.email"></td>
+                                                <td data-bind="text: ta.studentType"></td>
+                                                <td data-bind="text: ta.studentNumber"></td>
+                                                <td data-bind="text: ta.assignType"></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <!-- /ko -->
+                        <!-- ko if: !autoAssignModal.courseList().length -->
+                        <p>No possible assignments found.  Make sure that TAs and courses are active, and courses have start and end dates.</p>
+                        <!-- /ko -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bind="click: function () { confirmAutoAssigns(autoAssignModal.courseList()); }">Confirm</button>
+                        <button type="button" class="btn btn-default" data-bind="click: closeAutoAssignModal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="assignmentWarningModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-bind="click: closeAssignmentWarningModal"><span>&times;</span></button>
+                        <h4 class="modal-title">Warning</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <p>This assignment is not recommended since the TA or course will exceed their recommended assignment values.  Proceed with the assignment?</p>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="pull-right">
+                                    <a tabindex="0" class="btn btn-default popoverBtn" role="button" data-toggle="popover" data-trigger="focus" title="Recommended Assignments">
+                                        <span class="glyphicon glyphicon-info-sign"></span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bind="click: function () { assignTa(assignmentWarningModal.userId(), assignmentWarningModal.courseId(), assignmentWarningModal.assignType(), false, assignmentWarningModal.confirmAssignment); }">Yes</button>
+                        <button type="button" class="btn btn-default" data-bind="click: closeAssignmentWarningModal">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </body>
 </html>
-<script type="text/javascript" src="courses.js"></script>
- 
+<script type="text/javascript" src="js/courses.js"></script>
