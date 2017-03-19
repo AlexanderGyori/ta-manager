@@ -297,6 +297,10 @@ var TaViewModel = function () {
         pdfTools.printTaReport(ta.userId);
     };
 
+    self.printAllTasReport = function () {
+        pdfTools.printAllTasReport();
+    };
+
     // Immediately load list of teaching asssistants
     self.getTaList();
 

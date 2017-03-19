@@ -11,6 +11,7 @@
         <script type="text/javascript" src="js/date-tools.js"></script>
         <script type="text/javascript" src="libraries/pdfmake/pdfmake.min.js"></script>
         <script type="text/javascript" src="libraries/pdfmake/vfs_fonts.js"></script>
+        <script type="text/javascript" src="js/pdf-tools.js"></script>
         <script>
             $(function(){
                 $("#navbar").load("navbar.html");
@@ -40,6 +41,18 @@
                             <div class="input-group-btn">
                                 <button class="btn btn-default" type="button" data-bind="click: clearSearchTerm">Clear</button>
                             </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="pull-right">
+                            <button class="btn btn-default" data-bind="click: autoAssignTas"><span>Auto-Assign TAs</span></button>
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                <span>Reports </span><span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a href="#" data-bind="click: printCourseReport">Print Course Report</a></li>
+                            </ul>
+                            <button class="btn btn-default" data-bind="click: displayAddCourseModal"><span class="glyphicon glyphicon-plus"></span></button>
                         </div>
                     </div>
                 </div>
@@ -76,6 +89,9 @@
                                     <li><a href="#" data-bind="click: $parent.displayEditCourseModal">Edit course</a></li>
                                     <li><a href="#" data-bind="click: $parent.displayAssignTaModal">Assign TA</a></li>
                                     <li class="divider"></li>
+                                    <li><a href="#" data-bind="click: $parent.printCourseAssignedReport">Print currently assigned report</a></li>
+                                    <li><a href="#" data-bind="click: $parent.printCoursePreviouslyAssignedReport">Print previously assigned report</a></li>
+                                    <li class="divider"></li>
                                     <li><a href="#" data-bind="click: $parent.displayRemoveCourseModal">Remove course</a></li>
                                 </ul>
                             </div>
@@ -98,15 +114,26 @@
                     <!-- /ko -->
                 </tbody>
             </table>
-            <div class="pull-left">
-                <button class="btn btn-default" data-bind="click: testLogin"><span>Login</span></button>
-                <button class="btn btn-default" data-bind="click: testProfile"><span>View Profile</span></button>
-                <button class="btn btn-default" data-bind="click: testLogout"><span>Logout</span></button>
-            </div>
-            <div class="pull-right">
-                <button class="btn btn-default" data-bind="click: autoAssignTas"><span>Auto-Assign TAs</span></button>
-                <button class="btn btn-default" data-bind="click: pdfTest"><span>PDF TEST</span></button>
-                <button class="btn btn-default" data-bind="click: displayAddCourseModal"><span class="glyphicon glyphicon-plus"></span></button>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="pull-left">
+                        <button class="btn btn-default" data-bind="click: testLogin"><span>Login</span></button>
+                        <button class="btn btn-default" data-bind="click: testProfile"><span>View Profile</span></button>
+                        <button class="btn btn-default" data-bind="click: testLogout"><span>Logout</span></button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="pull-right">
+                        <button class="btn btn-default" data-bind="click: autoAssignTas"><span>Auto-Assign TAs</span></button>
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                            <span>Reports </span><span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href="#" data-bind="click: printCourseReport">Print Course Report</a></li>
+                        </ul>
+                        <button class="btn btn-default" data-bind="click: displayAddCourseModal"><span class="glyphicon glyphicon-plus"></span></button>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="addCourseModal" class="modal fade" tabindex="-1" role="dialog">

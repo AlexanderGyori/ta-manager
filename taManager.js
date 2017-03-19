@@ -88,6 +88,18 @@ taManager.get('/getAllCourses', function (req, res) {
         });
 });
 
+taManager.get('/getCourse', function (req, res) {
+    var courseId = req.query.courseId;
+    db.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
+        '"HasLab" AS "hasLab", "IsActive" AS "isActive" FROM thesis."Course" WHERE "CourseId" = $1', [courseId])
+    .then(function (course) {
+        res.send(course);
+    })
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
+});
+
 taManager.post('/addCourse', function (req, res) {
     var course = req.body;
     course.studentCount = (!course.studentCount ? null : course.studentCount);
@@ -158,6 +170,25 @@ taManager.get('/getAllTasForCourse', function (req, res) {
         .catch(function (error) {
             console.log('ERROR: ', error);
         });
+});
+
+taManager.get('/getAllPreviousTasForCourse', function (req, res) {
+    var courseId = req.query.courseId;
+    db.task(t => {
+        return t.query('SELECT "CourseCode" from thesis."Course" where "CourseId" = $1', [courseId])
+        .then(course => {
+            return t.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ' + 
+            'ta."StudentType" AS "studentType", assign."AssignType" AS "assignType" FROM thesis."CourseTaAssigns" assign INNER JOIN thesis."TeachingAssistant" ta ON assign."UserId" = ta."UserId" ' +
+            'JOIN thesis."Course" course ON course."CourseId" = assign."CourseId"' + 
+            'WHERE course."CourseCode" = $1 AND assign."CourseId" != $2 GROUP BY ta."UserId", assign."AssignType" ORDER BY ta."LastName" ASC', [course[0].CourseCode, courseId])
+            .then(taList => {
+                res.send(taList);
+            });
+        });
+    })    
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
 });
 
 taManager.get('/getUnassignedTasForCourse', function (req, res) {
@@ -257,6 +288,39 @@ taManager.post('/removeTa', function (req, res) {
         .catch(function (error) {
             console.log('ERROR: ', error);
         });
+});
+
+taManager.get('/getAllActiveTas', function (req, res) {
+    db.task(t => {
+        return t.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' +
+        '"IsActive" AS "isActive" FROM thesis."TeachingAssistant" WHERE "IsActive" = true ORDER BY "UserId" ASC;')
+        .then(activeTas => {
+            return t.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "UserId" AS "userId", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
+            '"AssignType" AS "assignType" FROM thesis."Course" course JOIN thesis."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" ' + 
+            'WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL;')
+            .then(assignmentSchedule => {
+                activeTas.map(function (ta) {
+                    return formatTa(ta, assignmentSchedule);
+                });
+                res.send(activeTas);
+            })
+        })
+    })
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
+});
+
+taManager.get('/getAllCoursesForAllActiveTas', function (req, res) {
+    db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
+        '"HasLab" AS "hasLab", course."IsActive" AS "isActive", ta."UserId" as "userId" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ON assign."CourseId" = course."CourseId" ' +
+        'JOIN thesis."TeachingAssistant" ta ON ta."UserId" = assign."UserId" WHERE ta."IsActive" = true')
+    .then(function (courses) {
+        res.send(courses);
+    })
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
 });
 
 taManager.get('/getAllCoursesForTa', function (req, res) {

@@ -45,6 +45,17 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-5">
+                        <div class="pull-right">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                <span>Reports </span><span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a href="#" data-bind="click: printAllTasReport">Print TAs Report</a></li>
+                            </ul>
+                            <button class="btn btn-default" data-bind="click: displayAddTaModal"><span class="glyphicon glyphicon-plus"></span></button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <table class="table">
@@ -86,8 +97,18 @@
                     <!-- /ko -->
                 </tbody>
             </table>
-            <div class="pull-right">
-                <button class="btn btn-default" data-bind="click: displayAddTaModal"><span class="glyphicon glyphicon-plus"></span></button>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                            <span>Reports </span><span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href="#" data-bind="click: printAllTasReport">Print TAs Report</a></li>
+                        </ul>
+                        <button class="btn btn-default" data-bind="click: displayAddTaModal"><span class="glyphicon glyphicon-plus"></span></button>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="addTaModal" class="modal fade" tabindex="-1" role="dialog">

@@ -93,11 +93,192 @@
         getTaReportInfo(userId, onSuccess);
     };
 
+    var getAllTasReportInfo = function (onSuccess) {
+        var xhttp1 = new XMLHttpRequest();
+        xhttp1.open("GET", "getAllActiveTas", true);
+        xhttp1.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                var activeTas = xhttp1.responseText ? JSON.parse(xhttp1.responseText) : [];
+                var xhttp2 = new XMLHttpRequest();
+                xhttp2.open("GET", "getAllCoursesForAllActiveTas", true);
+                xhttp2.onreadystatechange = function () {
+                    if (this.readyState === 4 && this.status === 200) {
+                        var courses = xhttp2.responseText ? JSON.parse(xhttp2.responseText) : [];
+                        activeTas.forEach(function (ta, i, activeTas) {
+                            activeTas.courseList = [];
+                            courses.forEach(function (course) {
+                                if (course.userId === ta.userId) {
+                                    activeTas.courseList.push(course);
+                                }
+                            });
+                        });
+                        onSuccess && onSuccess(activeTas);
+                    }
+                };
+                xhttp2.send();
+            }
+        };
+        xhttp1.send();
+    };
+
+    var printAllTasReport = function () {
+        var onSuccess = function (taList) {
+            var docDefinition = {
+                info: {
+                    title: 'TA Manager Report'
+                },
+                content: [
+                    { text: 'TA Report', fontSize: 20, bold: true },
+                    ' '
+                ]
+            };
+            taList.forEach(function (ta) {
+                docDefinition.content.push({ text: (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a') + (ta.email ? ' - ' + ta.email : ''), bold: true });
+                docDefinition.content.push({ text: ta.maxAssigns - ta.numOfAssigns + '/' + ta.maxAssigns + ' 140hr assignments' });
+                var courseListTableContent = [];
+                courseListTableContent.push([{ text: 'Course Code', bold: true }, { text: 'Title', bold: true }, { text: 'Start Term', bold: true }, { text: 'End Term', bold: true }]);
+                taList.courseList.forEach(function (course) {
+                    courseListTableContent.push([course.courseCode || '', course.title, dateTools.convertPgpStringToTermYear(course.startDate) || '', dateTools.convertPgpStringToTermYear(course.endDate) || '']);
+                });
+                docDefinition.content.push({
+                    table: {
+                        headerRows: 1,
+                        widths: ['*', '*', '*', '*'],
+                        body: courseListTableContent
+                    }
+                });
+                docDefinition.content.push(' ');
+            });
+
+            pdfMake.createPdf(docDefinition).open();
+        };
+        getAllTasReportInfo(onSuccess);
+    };
+
+    var getCourseAssignedReportInfo = function (courseId, onSuccess) {
+        var xhttp1 = new XMLHttpRequest();
+        xhttp1.open("GET", "getCourse?courseId=" + courseId, true);
+        xhttp1.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                var course = xhttp1.responseText ? JSON.parse(xhttp1.responseText) : [];
+                course = course.length ? course[0] : {};
+                var xhttp2 = new XMLHttpRequest();
+                xhttp2.open("GET", "getAllTasForCourse?courseId=" + courseId, true);
+                xhttp2.onreadystatechange = function () {
+                    if (this.readyState === 4 && this.status === 200) {
+                        var taList = xhttp2.responseText ? JSON.parse(xhttp2.responseText) : [];
+                        onSuccess && onSuccess(course, taList)
+                    }
+                };
+                xhttp2.send();
+            }
+        };
+        xhttp1.send();
+    };
+
+    var printCourseAssignedReport = function (courseId) {
+        var onSuccess = function (course, taList) {
+            var taListTableContent = [];
+            taListTableContent.push([{ text: 'Name', bold: true }, { text: 'User ID', bold: true }, { text: 'Email', bold: true }, { text: 'Student Number', bold: true }, { text: 'Type', bold: true }])
+            taList.forEach(function (ta) {
+                taListTableContent.push([
+                    (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a'),
+                    ta.userId || '',
+                    ta.email || '',
+                    ta.studentNumber || '',
+                    ta.studentType || ''
+                ]);
+            });
+            var docDefinition = {
+                info: {
+                    title: 'TA Manager Report'
+                },
+                content: [
+                    { text: course.courseCode + (course.title ? ' - ' + course.title : ''), fontSize: 20, bold: true },
+                    course.startDate && course.endDate ? dateTools.convertPgpStringToTermYear(course.startDate) + ' to ' + dateTools.convertPgpStringToTermYear(course.startDate) : '',
+                    (course.studentCount ? course.studentCount + ' students' : ''),
+                    ' ',
+                    { text: 'Assigned TAs', fontSize: 16, bold: true },
+                    {
+                        table: {
+                            headerRows: 1,
+                            widths: ['*', '*', '*', '*', '*'],
+                            body: taListTableContent
+                        }
+                    }
+                ]
+            };
+            pdfMake.createPdf(docDefinition).open();
+        };
+        getCourseAssignedReportInfo(courseId, onSuccess);
+    };
+
+    var getCoursePreviouslyAssignedReportInfo = function (courseId, onSuccess) {
+        var xhttp1 = new XMLHttpRequest();
+        xhttp1.open("GET", "getCourse?courseId=" + courseId, true);
+        xhttp1.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                var course = xhttp1.responseText ? JSON.parse(xhttp1.responseText) : [];
+                course = course.length ? course[0] : {};
+                var xhttp2 = new XMLHttpRequest();
+                xhttp2.open("GET", "getAllPreviousTasForCourse?courseId=" + courseId, true);
+                xhttp2.onreadystatechange = function () {
+                    if (this.readyState === 4 && this.status === 200) {
+                        var taList = xhttp2.responseText ? JSON.parse(xhttp2.responseText) : [];
+                        onSuccess && onSuccess(course, taList)
+                    }
+                };
+                xhttp2.send();
+            }
+        };
+        xhttp1.send();
+    };
+
+    var printCoursePreviouslyAssignedReport = function (courseId) {
+        var onSuccess = function (course, taList) {
+            var taListTableContent = [];
+            taListTableContent.push([{ text: 'Name', bold: true }, { text: 'User ID', bold: true }, { text: 'Email', bold: true }, { text: 'Student Number', bold: true }, { text: 'Type', bold: true }])
+            taList.forEach(function (ta) {
+                taListTableContent.push([
+                    (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a'),
+                    ta.userId || '',
+                    ta.email || '',
+                    ta.studentNumber || '',
+                    ta.studentType || ''
+                ]);
+            });
+            var docDefinition = {
+                info: {
+                    title: 'TA Manager Report'
+                },
+                content: [
+                    { text: course.courseCode + (course.title ? ' - ' + course.title : ''), fontSize: 20, bold: true },
+                    course.startDate && course.endDate ? dateTools.convertPgpStringToTermYear(course.startDate) + ' to ' + dateTools.convertPgpStringToTermYear(course.startDate) : '',
+                    (course.studentCount ? course.studentCount + ' students' : ''),
+                    ' ',
+                    { text: 'Previously Assigned TAs', fontSize: 16, bold: true },
+                    {
+                        table: {
+                            headerRows: 1,
+                            widths: ['*', '*', '*', '*', '*'],
+                            body: taListTableContent
+                        }
+                    }
+                ]
+            };
+            pdfMake.createPdf(docDefinition).open();
+        };
+        getCoursePreviouslyAssignedReportInfo(courseId, onSuccess);
+    };
+
     var pdfTools = {};
     pdfTools.printTaReport = printTaReport;
+    pdfTools.printAllTasReport = printAllTasReport;
+    pdfTools.printCourseAssignedReport = printCourseAssignedReport;
+    pdfTools.printCoursePreviouslyAssignedReport = printCoursePreviouslyAssignedReport;
     return pdfTools;
 
 }());
 
 var module = module || {};
-module.exports = dateTools;
+module.exports = pdfTools;

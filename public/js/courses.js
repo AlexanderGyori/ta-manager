@@ -680,7 +680,7 @@ var CourseViewModel = function () {
     };
 
     /**
-     * Test functions
+     * Passport Test functions
      */
 
     self.testLogin = function () {
@@ -720,6 +720,10 @@ var CourseViewModel = function () {
         xhttp.send();
     };
 
+    /**
+     * PDF functions
+     */
+
     self.pdfTest = function () {
         var docDefinition = {
             content: [
@@ -741,6 +745,18 @@ var CourseViewModel = function () {
             ]
         };
         pdfMake.createPdf(docDefinition).open();
+    };
+
+    self.printCourseReport = function () {
+
+    };
+
+    self.printCourseAssignedReport = function (course) {
+        pdfTools.printCourseAssignedReport(course.courseId);
+    };
+
+    self.printCoursePreviouslyAssignedReport = function (course) {
+        pdfTools.printCoursePreviouslyAssignedReport(course.courseId);
     };
 
 
