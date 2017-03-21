@@ -7,8 +7,8 @@
         <script type="text/javascript" src="libraries/knockout-3.4.1/knockout-3.4.1.js"></script>
         <script type="text/javascript" src="libraries/jquery-3.1.1/jquery-3.1.1.min.js"></script>
         <script type="text/javascript" src="libraries/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="js/table-tools.js"></script>
         <script type="text/javascript" src="js/date-tools.js"></script>
+        <script type="text/javascript" src="js/table-tools.js"></script>
         <script type="text/javascript" src="libraries/pdfmake/pdfmake.min.js"></script>
         <script type="text/javascript" src="libraries/pdfmake/vfs_fonts.js"></script>
         <script type="text/javascript" src="js/pdf-tools.js"></script>
@@ -63,8 +63,8 @@
                         <th class="columnHeader" data-bind="click: function () { changeOrder('courseCode'); }">Course Code</th>
                         <th class="columnHeader" data-bind="click: function () { changeOrder('title'); }">Title</th>
                         <th class="columnHeader" data-bind="click: function () { changeOrder('studentCount'); }">Students</th>
-                        <th class="columnHeader">Start Term</th> <!-- TODO: implement! -->
-                        <th class="columnHeader">End Term</th> <!-- TODO: implement! -->
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('startDate'); }">Start Term</th> 
+                        <th class="columnHeader" data-bind="click: function () { changeOrder('endDate'); }">End Term</th> 
                         <th class="columnHeader" data-bind="click: function () { changeOrder('hasLab'); }">Lab</th>
                         <th class="columnHeader" data-bind="click: function () { changeOrder('isActive'); }">Active</th>
                         <th class="columnHeader">Edit</th>

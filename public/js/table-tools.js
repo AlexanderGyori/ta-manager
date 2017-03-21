@@ -45,14 +45,6 @@
         }
     };
 
-    // TODO: implement
-    var filterDate = function (table, column, searchTerm) {
-        return table;
-    };
-    
-
-
-
     var filter = function (table, column, searchTerm) {
         searchTerm = searchTerm.toUpperCase();
         table.forEach(function (row, i, table) {
@@ -60,29 +52,7 @@
         });
         return table;
     };
-
-    /**
-     * Filters out rows from a table based on criteria applied to a column
-     * @param {Array} table - array of rows
-     * @param {String} column - column to be filtered on
-     * @param {String || Number} searchTerm - the term to search in the column for
-     * @param {String} dataType - the data type of the column i.e. Number, String...
-     * @param {String} criteria - 'contains', 'greater', 'less', 'equals', '!equals', '!contains'
-     * @return {Object} the filtered table
-     */
-    //var filter = function (table, column, searchTerm, dataType, criteria) {
-    //    if (dataType.toUpperCase() === 'NUMBER') {
-    //        return filterNumber(table, column, searchTerm, criteria);
-    //    } else if (dataType.toUpperCase() === 'STRING') {
-    //        return filterString(table, column, searchTerm, criteria);
-    //    } else if (dataType.toUpperCase() === 'DATE') {
-    //        return filterDate(table, column, searchTerm);
-    //    } else {
-    //        return table;
-    //    }
-    //};
     
-
     var sortNumber = function (table, column, order) {
         if (order.toUpperCase() === 'ASC') {
             return table.sort(function (a, b) {
@@ -123,11 +93,6 @@
         }
     };
 
-    // TODO: implement
-    var sortDate = function (table, column, order) {
-        return table;
-    };
-
     /**
      * Sorts a table based on column
      * @param {Array} table - table to be sorted
@@ -137,12 +102,10 @@
      * @return {Object} the sorted table
      */
     var sort = function (table, column, order, dataType) {
-        if (dataType.toUpperCase() === 'NUMBER' || dataType.toUpperCase() === 'BOOLEAN') {
+        if (dataType.toUpperCase() === 'NUMBER' || dataType.toUpperCase() === 'BOOLEAN' || dataType.toUpperCase() === 'DATE') {
             return sortNumber(table, column, order);
         } else if (dataType.toUpperCase() === 'STRING') {
             return sortString(table, column, order);
-        } else if (dataType.toUpperCase() === 'DATE') {
-            return sortDate(table, column, order);
         } else {
             return table;
         }

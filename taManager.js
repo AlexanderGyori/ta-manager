@@ -6,7 +6,7 @@ var passport = require('passport');
 var Strategy = require('passport-local').Strategy;
 var session = require('express-session');
 var dateTools = require('./public/js/date-tools.js');
-var db = pgp(configDb.url); // TODO: abstract out the various requirements in this string
+var db = pgp(configDb.url); 
 
 
 
@@ -112,7 +112,7 @@ taManager.post('/addCourse', function (req, res) {
         });
     } else {
         db.query('INSERT INTO thesis."Course"("CourseCode", "Title", "StudentCount", "StartDate", "EndDate", "HasLab", "IsActive") ' +
-        'VALUES ($1, $2, $3, $4, $5, $6, $7);', [course.courseCode, course.title, course.studentCount, course.startDate, course.endDate, course.hasLab, course.isActive]) // TODO: Add support for dates
+        'VALUES ($1, $2, $3, $4, $5, $6, $7);', [course.courseCode, course.title, course.studentCount, course.startDate, course.endDate, course.hasLab, course.isActive]) 
         .then(function (data) {
             res.send();
         })
@@ -775,58 +775,6 @@ taManager.post('/updateCourseTaAssignment', function (req, res) {
     db.query('UPDATE thesis."CourseTaAssigns" SET "AssignType" = $1 WHERE "UserId" = $2 AND "CourseId" = $3', [assign.assignType, assign.userId, assign.courseId])
         .then(function (data) {
             res.send();
-        })
-        .catch(function (error) {
-            console.log('ERROR: ', error);
-        });
-});
-
-/*taManager.get('/getUnassignedTasForCourse', function (req, res) {
-    var courseId = req.query.courseId;
-    db.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" as "studentNumber" ' +  
-        'FROM thesis."TeachingAssistant" ta LEFT OUTER JOIN thesis."CourseTaAssigns" course ON ta."UserId" = course."UserId" ' +
-        'WHERE course."CourseId" != $1 OR course."CourseId" IS NULL GROUP BY ta."UserId" ORDER BY ta."LastName" ASC', [courseId])
-        .then(function (data) {
-            res.send(data);
-        })
-        .catch(function (error) {
-            console.log('ERROR: ', error);
-        });
-});*/
-
-
-
-// =========================================== TEST FUNCTIONS ===========================================
-
-taManager.get('/', function (req, res) {
-    res.send('Hello World!!');
-});
-
-taManager.get('/airspeed', function (req, res) {
-    res.send('African or European?');
-});
-
-taManager.get('/africanOrEuropean', function (req, res) {
-    if (req.query.birdType === "AFRICAN") {
-        res.send('11');
-    } else {
-        res.send('22');
-    }
-});
-
-taManager.post('/africanOrEuropean', function (req, res) {
-    if (req.body.birdType === "AFRICAN") {
-        res.send('33');
-    } else {
-        res.send('44');
-    }
-});
-
-taManager.get('/testDb', function (req, res) {
-    db.one('SELECT * FROM thesis."Course"')
-        .then(function (data) {
-            console.log('DATA: ', data.value);
-            res.send(data);
         })
         .catch(function (error) {
             console.log('ERROR: ', error);

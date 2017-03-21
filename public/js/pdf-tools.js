@@ -282,7 +282,6 @@
         xhttp1.onreadystatechange = function () {
             if (this.readyState === 4 && this.status === 200) {
                 var courseList = xhttp1.responseText ? JSON.parse(xhttp1.responseText) : [];
-                console.log(courseList);
                 onSuccess && onSuccess(courseList, startDate, endDate);
             }
         };

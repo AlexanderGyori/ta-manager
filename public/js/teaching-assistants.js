@@ -43,7 +43,7 @@ var TaViewModel = function () {
         var xhttp = new XMLHttpRequest();
         xhttp.open("GET", "getAllTas", true);
         xhttp.onreadystatechange = function () {
-            if (this.readyState === 4 && this.status === 200) { // TODO: ADD LOADING GIF HERE
+            if (this.readyState === 4 && this.status === 200) { 
                 self.populateTaList(JSON.parse(xhttp.responseText));
                 self.search(self.searchTerm());
             }

@@ -115,7 +115,7 @@ var CourseViewModel = function () {
         var xhttp = new XMLHttpRequest();
         xhttp.open("GET", "getAllCourses", true);
         xhttp.onreadystatechange = function () {
-            if (this.readyState === 4 && this.status === 200) { // TODO: ADD LOADING GIF HERE
+            if (this.readyState === 4 && this.status === 200) { 
                 self.populateCourseList(JSON.parse(xhttp.responseText));
                 self.search(self.searchTerm());
             }
@@ -622,8 +622,6 @@ var CourseViewModel = function () {
             term: self.termReportModal.endDateTerm(),
             year: self.termReportModal.endDateYear()
         }
-        console.log(startDate);
-        console.log(endDate);
         pdfTools.printTermReport(startDate, endDate);
     };
 
