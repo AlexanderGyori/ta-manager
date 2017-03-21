@@ -207,6 +207,45 @@ taManager.get('/getUnassignedTasForCourse', function (req, res) {
         });
 });
 
+taManager.get('/getCourseTaAssignsBetweenDates', function (req, res) {
+    var startDate = {
+        term: req.query.startDateTerm,
+        year: req.query.startDateYear
+    };
+    var endDate = {
+        term: req.query.endDateTerm,
+        year: req.query.endDateYear
+    };
+
+    db.task(t => {
+        return t.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' + 
+            '"HasLab" AS "hasLab", "IsActive" AS "isActive" FROM thesis."Course" WHERE "IsActive" = true ')
+        .then(activeCourses => {
+            return t.query('SELECT assign."CourseId" AS "assignedCourseId", ta."UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' +
+            'ta."IsActive" AS "isActive" FROM thesis."TeachingAssistant" ta JOIN thesis."CourseTaAssigns" assign ON ta."UserId" = assign."UserId" JOIN thesis."Course" course ON course."CourseId" = ' + 
+            'assign."CourseId" WHERE course."IsActive" = true')
+            .then(tasToActiveCourses => {
+                activeCourses.map(function (course) {
+                    course.taList = tasToActiveCourses.filter(function (ta) {
+                        return course.courseId === ta.assignedCourseId;
+                    });
+                    course.startDateObj = dateTools.convertPgpStringToDate(course.startDate);
+                    course.endDateObj = dateTools.convertPgpStringToDate(course.endDate);
+                    return course;
+                });
+                activeCourses = activeCourses.filter(function (course) {
+                    return dateTools.doDateRangesOverlap({ startDate: course.startDate, endDate: course.endDate }, { startDate: dateTools.buildStartDatePgpString(startDate.term, startDate.year), endDate: dateTools.buildEndDatePgpString(endDate.term, endDate.year) });
+                });
+
+                res.send(activeCourses);
+            });
+        });
+    })
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
+});
+
 
 // =========================================== TEACHING ASSISTANTS PAGE ===========================================
 

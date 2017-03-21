@@ -84,6 +84,15 @@ var CourseViewModel = function () {
         assignType: ko.observable()
     };
 
+    self.termReportModal = {
+        startDateTerm: ko.observable(''),
+        startDateTermLabel: ko.observable('Term'),
+        startDateYear: ko.observable(''),
+        endDateTerm: ko.observable(''),
+        endDateTermLabel: ko.observable('Term'),
+        endDateYear: ko.observable('')
+    };
+
     self.populateCourseList = function (courses) {
         self.courseList.removeAll();
         courses.forEach(function (course) {
@@ -251,7 +260,7 @@ var CourseViewModel = function () {
 
     self.editCourse = function (course) {
         if (!course.courseId()) {
-            alert('Course is invalid.');
+            alert('Course is invalid. Please try refreshing.');
         } else if (!courseModalIsValid(course)) {
             return;
         }
@@ -564,6 +573,58 @@ var CourseViewModel = function () {
             }
         };
         xhttp.send();
+    };
+
+    /**
+     * Term Report functions
+     */
+    
+    self.termReportModal.clearTermReportModal = function () {
+        self.termReportModal.startDateTerm('');
+        self.termReportModal.startDateTermLabel('Term');
+        self.termReportModal.startDateYear('');
+        self.termReportModal.endDateTerm('');
+        self.termReportModal.endDateTermLabel('Term');
+        self.termReportModal.endDateYear('');
+    };
+
+    self.displayTermReportModal = function () {
+        self.termReportModal.clearTermReportModal();
+        $('#termReportModal').modal('show');
+    };
+
+    self.closeTermReportModal = function () {
+        $('#termReportModal').modal('hide');
+    };
+
+    self.termReportModal.setStartDateTerm = function (term) {
+        self.termReportModal.startDateTerm(term);
+    };
+
+    self.termReportModal.setEndDateTerm = function (term) {
+        self.termReportModal.endDateTerm(term);
+    };
+
+    self.termReportModal.startDateTerm.subscribe(function (newTerm) {
+        self.termReportModal.startDateTermLabel(newTerm || 'Term');
+    });
+
+    self.termReportModal.endDateTerm.subscribe(function (newTerm) {
+        self.termReportModal.endDateTermLabel(newTerm || 'Term');
+    });
+
+    self.termReportModal.printTermReport = function () {
+        var startDate = {
+            term: self.termReportModal.startDateTerm(),
+            year: self.termReportModal.startDateYear()
+        };
+        var endDate = {
+            term: self.termReportModal.endDateTerm(),
+            year: self.termReportModal.endDateYear()
+        }
+        console.log(startDate);
+        console.log(endDate);
+        pdfTools.printTermReport(startDate, endDate);
     };
 
     /**

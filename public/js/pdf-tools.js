@@ -271,11 +271,74 @@
         getCoursePreviouslyAssignedReportInfo(courseId, onSuccess);
     };
 
+    var getTermReportInfo = function (onSuccess, startDate, endDate) {
+        var xhttp1 = new XMLHttpRequest();
+        var params =
+            "startDateTerm=" + startDate.term + "&" +
+            "startDateYear=" + startDate.year + "&" +
+            "endDateTerm=" + endDate.term + "&" +
+            "endDateYear=" + endDate.year;
+        xhttp1.open("GET", "getCourseTaAssignsBetweenDates?" + params, true);
+        xhttp1.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                var courseList = xhttp1.responseText ? JSON.parse(xhttp1.responseText) : [];
+                console.log(courseList);
+                onSuccess && onSuccess(courseList, startDate, endDate);
+            }
+        };
+        xhttp1.send();
+    };
+
+    var printTermReport = function (startDate, endDate) {
+        var onSuccess = function (courses, startDate, endDate) {
+            var docDefinition = {
+                info: {
+                    title: 'TA Manager Report'
+                },
+                content: [
+                    { text: 'Term Report', fontSize: 20, bold: true },
+                    startDate.term + ' ' + startDate.year + ' to ' + endDate.term + ' ' + endDate.year,
+                    ' '
+                ]
+            };
+
+            courses.forEach(function (course) {
+                course.startDate = dateTools.convertPgpStringToTermYear(course.startDate);
+                course.endDate = dateTools.convertPgpStringToTermYear(course.endDate);
+                docDefinition.content.push({ text: (course.courseCode || 'n/a') + ' - ' + (course.title || 'n/a'), bold: true });
+                docDefinition.content.push({ text: course.startDate + ' to ' + course.endDate });
+                var taListTableContent = [];
+                taListTableContent.push([{ text: 'Name', bold: true }, { text: 'User ID', bold: true }, { text: 'Email', bold: true }, { text: 'Student Number', bold: true }, { text: 'Type', bold: true }]);
+                course.taList.forEach(function (ta) {
+                    taListTableContent.push([
+                        (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a'),
+                        ta.userId || '',
+                        ta.email || '',
+                        ta.studentNumber || '',
+                        ta.studentType || ''
+                    ]);
+                });
+                docDefinition.content.push({
+                    table: {
+                        headerRows: 1,
+                        widths: ['*', '*', '*', '*', '*'],
+                        body: taListTableContent
+                    }
+                });
+                docDefinition.content.push(' ');
+            });
+
+            pdfMake.createPdf(docDefinition).open();
+        };
+        getTermReportInfo(onSuccess, startDate, endDate);
+    };
+
     var pdfTools = {};
     pdfTools.printTaReport = printTaReport;
     pdfTools.printAllTasReport = printAllTasReport;
     pdfTools.printCourseAssignedReport = printCourseAssignedReport;
     pdfTools.printCoursePreviouslyAssignedReport = printCoursePreviouslyAssignedReport;
+    pdfTools.printTermReport = printTermReport;
     return pdfTools;
 
 }());

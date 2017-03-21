@@ -50,7 +50,7 @@
                                 <span>Reports </span><span class="caret"></span>
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a href="#" data-bind="click: printCourseReport">Print Course Report</a></li>
+                                <li><a href="#" data-bind="click: displayTermReportModal">Print Term Report</a></li>
                             </ul>
                             <button class="btn btn-default" data-bind="click: displayAddCourseModal"><span class="glyphicon glyphicon-plus"></span></button>
                         </div>
@@ -129,7 +129,7 @@
                             <span>Reports </span><span class="caret"></span>
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a href="#" data-bind="click: printCourseReport">Print Course Report</a></li>
+                            <li><a href="#" data-bind="click: displayTermReportModal">Print Term Report</a></li>
                         </ul>
                         <button class="btn btn-default" data-bind="click: displayAddCourseModal"><span class="glyphicon glyphicon-plus"></span></button>
                     </div>
@@ -511,6 +511,60 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" data-bind="click: function () { assignTa(assignmentWarningModal.userId(), assignmentWarningModal.courseId(), assignmentWarningModal.assignType(), false, assignmentWarningModal.confirmAssignment); }">Yes</button>
                         <button type="button" class="btn btn-default" data-bind="click: closeAssignmentWarningModal">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="termReportModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-bind="click: closeTermReportModal"><span>&times;</span></button>
+                        <h4 class="modal-title">Warning</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <label>Start Term</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                            <span data-bind="text: termReportModal.startDateTermLabel"></span>
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="#" data-bind="click: function () { termReportModal.setStartDateTerm(''); }">Term</a></li>
+                                            <li><a href="#" data-bind="click: function () { termReportModal.setStartDateTerm('Fall'); }">Fall</a></li>
+                                            <li><a href="#" data-bind="click: function () { termReportModal.setStartDateTerm('Winter'); }">Winter</a></li>
+                                            <li><a href="#" data-bind="click: function () { termReportModal.setStartDateTerm('Summer'); }">Summer</a></li>
+                                        </ul>
+                                        <input type="number" placeholder="Year" class="form-control" data-bind="value: termReportModal.startDateYear" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label>End Term</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                            <span data-bind="text: termReportModal.endDateTermLabel"></span>
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="#" data-bind="click: function () { termReportModal.setEndDateTerm(''); }">Term</a></li>
+                                            <li><a href="#" data-bind="click: function () { termReportModal.setEndDateTerm('Fall'); }">Fall</a></li>
+                                            <li><a href="#" data-bind="click: function () { termReportModal.setEndDateTerm('Winter'); }">Winter</a></li>
+                                            <li><a href="#" data-bind="click: function () { termReportModal.setEndDateTerm('Summer'); }">Summer</a></li>
+                                        </ul>
+                                        <input type="number" placeholder="Year" class="form-control" data-bind="value: termReportModal.endDateYear" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bind="click: termReportModal.printTermReport">Yes</button>
+                        <button type="button" class="btn btn-default" data-bind="click: closeTermReportModal">No</button>
                     </div>
                 </div>
             </div>

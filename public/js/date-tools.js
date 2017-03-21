@@ -81,7 +81,7 @@ var dateTools = (function () {
     // Takes date strings in objects like { startDate: ___, endDate: ___ }
     var doDateRangesOverlap = function (range1, range2) {
         range1.startDate = convertPgpStringToDate(range1.startDate);
-        range1.endDate = convertPgpStringToDate(range1.startDate);
+        range1.endDate = convertPgpStringToDate(range1.endDate);
         range2.startDate = convertPgpStringToDate(range2.startDate);
         range2.endDate = convertPgpStringToDate(range2.endDate);
 
