@@ -28,5 +28,7 @@
     transition: height 0.01s;
 }
 
-.table {
+.highlighted {
+    background-color: #267326;
+    color: white;
 }

@@ -95,6 +95,15 @@ var dateTools = (function () {
         return convertDateToTermYear(convertPgpStringToDate(dateString));
     };
 
+    // Takes date strings in objects like { startDate: ___, endDate: ___ }.  Completely empty date ranges are also valid.
+    var isDateRangeValid = function (startDate, endDate) {
+        var startDateObj = convertPgpStringToDate(buildStartDatePgpString(startDate.term, startDate.year));
+        var endDateObj = convertPgpStringToDate(buildEndDatePgpString(endDate.term, endDate.year));
+
+        return ((startDate.term && startDate.year && endDate.term && endDate.year) || (!startDate.term && !startDate.year && !endDate.term && !endDate.year))
+            && (startDateObj < endDateObj);
+    };
+
     var dateTools = {};
     dateTools.convertDateToTerm = convertDateToTerm;
     dateTools.convertDateToTermYear = convertDateToTermYear;
@@ -105,6 +114,7 @@ var dateTools = (function () {
     dateTools.convertDateRangeToTermCount = convertDateRangeToTermCount;
     dateTools.doDateRangesOverlap = doDateRangesOverlap;
     dateTools.convertPgpStringToTermYear = convertPgpStringToTermYear;
+    dateTools.isDateRangeValid = isDateRangeValid;
     return dateTools;
 }());
 

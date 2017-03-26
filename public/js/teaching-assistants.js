@@ -30,6 +30,20 @@ var TaViewModel = function () {
         userId: ko.observable('')
     };
 
+    self.viewCoursesModal = {
+        name: ko.observable(''),
+        userId: ko.observable(''),
+        email: ko.observable(''),
+        courseList: ko.observableArray([])
+    };
+
+    self.viewSupervisorsModal = {
+        name: ko.observable(''),
+        userId: ko.observable(''),
+        email: ko.observable(''),
+        supervisorList: ko.observableArray([])
+    };
+
     self.populateTaList = function (tas) {
         self.taList.removeAll();
         tas.forEach(function (ta, i) {
@@ -180,6 +194,79 @@ var TaViewModel = function () {
 
     self.setRemoveTaModal = function (ta) {
         self.removeTaModal.userId(ta.userId);
+    };
+
+    /**
+     * View Courses functions
+     */
+
+    self.closeViewCoursesModal = function () {
+        $('#viewCoursesModal').modal('hide');
+    };
+
+    self.clearViewCoursesModal = function () {
+        self.viewCoursesModal.courseList([]);
+    };
+
+    self.setViewCoursesModal = function (courses, ta) {
+        self.viewCoursesModal.name((ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a'));
+        self.viewCoursesModal.userId(ta.userId);
+        self.viewCoursesModal.email(ta.email);
+        self.viewCoursesModal.courseList(courses);
+    };
+
+    self.displayViewCoursesModal = function (ta) {
+        self.clearViewCoursesModal();
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("GET", "getAllCoursesForTa?userId=" + ta.userId, true);
+        xhttp.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                var courses = xhttp.responseText ? JSON.parse(xhttp.responseText) : [];
+                courses.map(function (course) {
+                    course.startDate = dateTools.convertPgpStringToTermYear(course.startDate);
+                    course.endDate = dateTools.convertPgpStringToTermYear(course.endDate);
+                });
+                self.setViewCoursesModal(courses, ta);
+                $('#viewCoursesModal').modal('show');
+            }
+        };
+        xhttp.send();
+    };
+
+    /**
+     * View Supervisors functions
+     */
+
+    self.closeViewSupervisorsModal = function () {
+        $('#viewSupervisorsModal').modal('hide');
+    };
+
+    self.clearViewSupervisorsModal = function () {
+        self.viewSupervisorsModal.supervisorList([]);
+    };
+
+    self.setViewSupervisorsModal = function (supervisors, ta) {
+        self.viewSupervisorsModal.name((ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a'));
+        self.viewSupervisorsModal.userId(ta.userId);
+        self.viewSupervisorsModal.email(ta.email);
+        self.viewSupervisorsModal.supervisorList(supervisors);
+    };
+
+    self.displayViewSupervisorsModal = function (ta) {
+        self.clearViewSupervisorsModal();
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("GET", "getAllSupervisorsForTa?userId=" + ta.userId, true);
+        xhttp.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                var supervisors = xhttp.responseText ? JSON.parse(xhttp.responseText) : [];
+                supervisors.map(function (supervisor) {
+                    supervisor.name = (supervisor.lastName || 'n/a') + ', ' + (supervisor.firstName || 'n/a')
+                });
+                self.setViewSupervisorsModal(supervisors, ta);
+                $('#viewSupervisorsModal').modal('show');
+            }
+        };
+        xhttp.send();
     };
 
     /**

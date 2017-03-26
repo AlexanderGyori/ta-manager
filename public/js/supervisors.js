@@ -45,7 +45,7 @@ var SupervisorViewModel = function () {
         var xhttp = new XMLHttpRequest();
         xhttp.open("GET", "getAllSupervisors", true);
         xhttp.onreadystatechange = function () {
-            if (this.readyState === 4 && this.status === 200) { // TODO: ADD LOADING GIF HERE
+            if (this.readyState === 4 && this.status === 200) { 
                 self.populateSupervisorList(JSON.parse(xhttp.responseText));
             }
         };

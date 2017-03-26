@@ -67,7 +67,10 @@ var CourseViewModel = function () {
         searchTerm: ko.observable(''),
         searchColumn: ko.observable('userId'),
         searchColumnLabel: ko.observable('User Id'),
-        courseId: ko.observable(null)
+        courseId: ko.observable(null),
+        courseCode: ko.observable(''),
+        courseTitle: ko.observable(''),
+        title: ko.observable('')
     };
 
     self.removeCourseModal = {
@@ -90,7 +93,8 @@ var CourseViewModel = function () {
         startDateYear: ko.observable(''),
         endDateTerm: ko.observable(''),
         endDateTermLabel: ko.observable('Term'),
-        endDateYear: ko.observable('')
+        endDateYear: ko.observable(''),
+        hasDateError: ko.observable(false)
     };
 
     self.populateCourseList = function (courses) {
@@ -131,6 +135,7 @@ var CourseViewModel = function () {
                 var taList = JSON.parse(xhttp.responseText) || [];
                 taList.forEach(function (ta) {
                     ta.name = (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a');
+                    ta.assignType = ko.observable(ta.assignType || '');
                 });
                 course.taList(taList);
             }
@@ -184,8 +189,17 @@ var CourseViewModel = function () {
     });
 
     var courseModalIsValid = function (course) {
+        var startDate = {
+            term: course.startDateTerm(),
+            year: course.startDateYear()
+        };
+        var endDate = {
+            term: course.endDateTerm(),
+            year: course.endDateYear()
+        };
+
         course.hasCourseCodeError(!course.courseCode());
-        course.hasDateError(!((course.startDateTerm() && course.startDateYear() && course.endDateTerm() && course.endDateYear()) || (!course.startDateTerm() && !course.startDateYear() && !course.endDateTerm() && !course.endDateYear())));
+        course.hasDateError(!dateTools.isDateRangeValid(startDate, endDate));
         return !(course.hasCourseCodeError() || course.hasDateError());
     };
 
@@ -359,9 +373,27 @@ var CourseViewModel = function () {
         $('#assignTaModal').modal('hide');
     };
 
+    self.assignTaModal.setPreviouslyTaught = function (previouslyAssignedTas) {
+        var addPreviouslyAssigned = function (ta) {
+            var wasPreviouslyAssigned = function (previouslyAssignedTa) {
+                return previouslyAssignedTa.userId === ta.userId;
+            };
+            ta.previouslyAssigned = ko.observable(previouslyAssignedTas.some(wasPreviouslyAssigned));
+        };
+
+        self.assignTaModal.unassignedTas().forEach(addPreviouslyAssigned);
+        self.assignTaModal.assignedTas().forEach(addPreviouslyAssigned);
+        var oldUnassigned = self.assignTaModal.unassignedTas().slice(0); // This is the only way I could make it so that the arrays update
+        var oldAssigned = self.assignTaModal.assignedTas().slice(0);
+        self.assignTaModal.unassignedTas([]);
+        self.assignTaModal.assignedTas([]);
+        self.assignTaModal.unassignedTas(oldUnassigned);
+        self.assignTaModal.assignedTas(oldAssigned);
+    };
+
     self.assignTaModal.setUnassignedTaList = function (taList) {
         self.assignTaModal.unassignedTas.removeAll();
-        taList.forEach(function (ta, i) {
+        taList.forEach(function (ta) {
             ta.isVisible = ko.observable(true);
             ta.assignType = ko.observable("Full");
             ta.name = (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a');
@@ -369,27 +401,51 @@ var CourseViewModel = function () {
         });
     };
 
-    self.assignTaModal.loadUnassignedTaList = function (courseId) {
+    self.assignTaModal.setAssignedTaList = function (taList, previouslyAssignedTas) {
+        self.assignTaModal.assignedTas.removeAll();
+        taList.forEach(function (ta) {
+            self.assignTaModal.assignedTas.push(ta);
+        });
+    };
+
+
+    self.assignTaModal.loadTaLists = function (course) {
         var xhttp = new XMLHttpRequest();
-        xhttp.open("GET", "getUnassignedTasForCourse?courseId="+courseId, true);
+        xhttp.open("GET", "getUnassignedTasForCourse?courseId=" + course.courseId, true);
         xhttp.onreadystatechange = function () {
             if (this.readyState === 4 && this.status === 200) {
-                self.assignTaModal.setUnassignedTaList(JSON.parse(xhttp.responseText));
+                var unassignedTas = xhttp.responseText ? JSON.parse(xhttp.responseText) : [];
+                var xhttp2 = new XMLHttpRequest();
+                xhttp2.open("GET", "getPreviouslyTaughtForCourse?courseCode=" + course.courseCode, true);
+                xhttp2.onreadystatechange = function () {
+                    if (this.readyState === 4 && this.status === 200) {
+                        var previouslyAssignedTas = xhttp2.responseText ? JSON.parse(xhttp2.responseText) : [];
+                        self.assignTaModal.setUnassignedTaList(unassignedTas);
+                        self.assignTaModal.setAssignedTaList(course.taList().slice(0));
+                        self.assignTaModal.setPreviouslyTaught(previouslyAssignedTas);
+                    }
+                }
+                xhttp2.send();
             }
         };
         xhttp.send();
     };
 
     self.setAssignTaModal = function (course) {
-        self.assignTaModal.loadUnassignedTaList(course.courseId);
-        self.assignTaModal.assignedTas(course.taList().slice(0).map(function (ta) {
-            ta.assignType = ko.observable(ta.assignType);
-            return ta;
-        }));
+        self.assignTaModal.loadTaLists(course);
         self.assignTaModal.searchTerm('');
         self.assignTaModal.searchColumn('userId');
         self.assignTaModal.searchColumnLabel('User Id');
         self.assignTaModal.courseId(course.courseId || null);
+        self.assignTaModal.courseCode(course.courseCode || '');
+        self.assignTaModal.courseTitle(course.title || '');
+        if (course.courseCode && course.title) {
+            self.assignTaModal.title(course.courseCode + ' - ' + course.title);
+        } else if (course.courseCode || course.title) {
+            self.assignTaModal.title(course.CourseCode + course.title);
+        } else {
+            self.assignTaModal.title('');
+        }
     };
 
     self.pushTaToCourseList = function (courseId, ta) {
@@ -467,7 +523,16 @@ var CourseViewModel = function () {
         xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         xhttp.onreadystatechange = function () {
             if (this.readyState === 4 && this.status === 200) {
-                self.assignTaModal.moveTaToUnassigned(ta.userId);
+                var xhttp2 = new XMLHttpRequest();
+                xhttp2.open("GET", "getPreviouslyTaughtForCourse?courseCode=" + self.assignTaModal.courseCode(), true);
+                xhttp2.onreadystatechange = function () {
+                    if (this.readyState === 4 && this.status === 200) {
+                        var previouslyAssignedTas = xhttp2.responseText ? JSON.parse(xhttp2.responseText) : [];
+                        self.assignTaModal.moveTaToUnassigned(ta.userId);
+                        self.assignTaModal.setPreviouslyTaught(previouslyAssignedTas);
+                    }
+                }
+                xhttp2.send();
             }
         };
         xhttp.send(params);
@@ -586,6 +651,7 @@ var CourseViewModel = function () {
         self.termReportModal.endDateTerm('');
         self.termReportModal.endDateTermLabel('Term');
         self.termReportModal.endDateYear('');
+        self.termReportModal.hasDateError(false);
     };
 
     self.displayTermReportModal = function () {
@@ -621,62 +687,107 @@ var CourseViewModel = function () {
         var endDate = {
             term: self.termReportModal.endDateTerm(),
             year: self.termReportModal.endDateYear()
+        };
+        self.termReportModal.hasDateError(!dateTools.isDateRangeValid(startDate, endDate));
+        if (self.termReportModal.hasDateError()) {
+            return;
+        } else {
+            pdfTools.printTermReport(startDate, endDate);
         }
-        pdfTools.printTermReport(startDate, endDate);
     };
 
     /**
      * Sort functions
      */
 
+    var createOrderSubscribe = function (observableArray, columnName, columnType) {
+        return function (newOrder) {
+            if (newOrder === 'ASC' || newOrder === 'DESC') {
+                observableArray(tableTools.sort(observableArray(), columnName, newOrder, columnType));
+            }
+        };
+    };
+
     self.courseCodeOrder = ko.observable('');
-    self.courseCodeOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.courseList(tableTools.sort(self.courseList(), 'courseCode', newOrder, 'String'));
-        }
-    });
+    self.courseCodeOrder.subscribe(createOrderSubscribe(self.courseList, 'courseCode', 'String'));
 
     self.titleOrder = ko.observable('');
-    self.titleOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.courseList(tableTools.sort(self.courseList(), 'title', newOrder, 'String'));
-        }
-    });
+    self.titleOrder.subscribe(createOrderSubscribe(self.courseList, 'title', 'String'));
 
     self.studentCountOrder = ko.observable('');
-    self.studentCountOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.courseList(tableTools.sort(self.courseList(), 'studentCount', newOrder, 'Number'));
-        }
-    });
+    self.studentCountOrder.subscribe(createOrderSubscribe(self.courseList, 'studentCount', 'Number'));
 
     self.startDateOrder = ko.observable('');
-    self.startDateOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.courseList(tableTools.sort(self.courseList(), 'startDate', newOrder, 'Date'));
-        }
-    });
+    self.startDateOrder.subscribe(createOrderSubscribe(self.courseList, 'startDate', 'Date'));
 
     self.endDateOrder = ko.observable('');
-    self.endDateOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.courseList(tableTools.sort(self.courseList(), 'endDate', newOrder, 'Date'));
-        }
-    });
+    self.endDateOrder.subscribe(createOrderSubscribe(self.courseList, 'endDate', 'Date'));
 
     self.hasLabOrder = ko.observable('');
-    self.hasLabOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.courseList(tableTools.sort(self.courseList(), 'hasLab', newOrder, 'Boolean'));
-        }
-    });
+    self.hasLabOrder.subscribe(createOrderSubscribe(self.courseList, 'hasLab', 'Boolean'));
 
     self.isActiveOrder = ko.observable('');
-    self.isActiveOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.courseList(tableTools.sort(self.courseList(), 'isActive', newOrder, 'Boolean'));
+    self.isActiveOrder.subscribe(createOrderSubscribe(self.courseList, 'isActive', 'Boolean'));
+
+    self.assignTaModal.unassignedUserIdOrder = ko.observable('');
+    self.assignTaModal.unassignedUserIdOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'userId', 'String'));
+
+    self.assignTaModal.unassignedNameOrder = ko.observable('');
+    self.assignTaModal.unassignedNameOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'name', 'String'));
+
+    self.assignTaModal.unassignedEmailOrder = ko.observable('');
+    self.assignTaModal.unassignedEmailOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'email', 'String'));
+
+    self.assignTaModal.unassignedIsActiveOrder = ko.observable('');
+    self.assignTaModal.unassignedIsActiveOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'isActive', 'Boolean'));
+
+    self.assignTaModal.assignedUserIdOrder = ko.observable('');
+    self.assignTaModal.assignedUserIdOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'userId', 'String'));
+
+    self.assignTaModal.assignedNameOrder = ko.observable('');
+    self.assignTaModal.assignedNameOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'name', 'String'));
+
+    self.assignTaModal.assignedEmailOrder = ko.observable('');
+    self.assignTaModal.assignedEmailOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'email', 'String'));
+
+    self.assignTaModal.assignedIsActiveOrder = ko.observable('');
+    self.assignTaModal.assignedIsActiveOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'isActive', 'Boolean'));
+
+    self.assignTaModal.clearUnassignedOrders = function () {
+        self.assignTaModal.unassignedUserIdOrder('');
+        self.assignTaModal.unassignedNameOrder('');
+        self.assignTaModal.unassignedEmailOrder('');
+        self.assignTaModal.unassignedIsActiveOrder('');
+    };
+
+    self.assignTaModal.clearAssignedOrders = function () {
+        self.assignTaModal.assignedUserIdOrder('');
+        self.assignTaModal.assignedNameOrder('');
+        self.assignTaModal.assignedEmailOrder('');
+        self.assignTaModal.assignedIsActiveOrder('');
+    };
+
+    self.assignTaModal.changeUnassignedOrder = function (orderName) {
+        var selectedOrder = self.assignTaModal[orderName]();
+        if (!selectedOrder || selectedOrder === 'DESC') {
+            self.assignTaModal.clearUnassignedOrders();
+            self.assignTaModal[orderName]('ASC');
+        } else {
+            self.assignTaModal.clearUnassignedOrders();
+            self.assignTaModal[orderName]('DESC');
         }
-    });
+    };
+
+    self.assignTaModal.changeAssignedOrder = function (orderName) {
+        var selectedOrder = self.assignTaModal[orderName]();
+        if (!selectedOrder || selectedOrder === 'DESC') {
+            self.assignTaModal.clearAssignedOrders();
+            self.assignTaModal[orderName]('ASC');
+        } else {
+            self.assignTaModal.clearAssignedOrders();
+            self.assignTaModal[orderName]('DESC');
+        }
+    };
 
     var clearOrders = function () {
         self.courseCodeOrder('');
@@ -700,10 +811,30 @@ var CourseViewModel = function () {
     self.changeOrder = function (columnName) {
         var selectedOrder = self[orderDictionary[columnName]]();
         if (!selectedOrder || selectedOrder === 'DESC') {
-            clearOrders(columnName);
+            clearOrders();
             self[orderDictionary[columnName]]('ASC');
         } else {
-            clearOrders(columnName);
+            clearOrders();
+            self[orderDictionary[columnName]]('DESC');
+        }
+    };
+
+    var clearAssignTaModalOrders = function () {
+        self.courseCodeOrder('');
+        self.titleOrder('');
+        self.startDateOrder('');
+        self.endDateOrder('');
+        self.hasLabOrder('');
+        self.isActiveOrder('');
+    };
+
+    self.changeOrder = function (selectedOrder) {
+        var selectedOrder = self[orderDictionary[columnName]]();
+        if (!selectedOrder || selectedOrder === 'DESC') {
+            clearAssignTaModalOrders();
+            self[orderDictionary[columnName]]('ASC');
+        } else {
+            clearAssignTaModalOrders();
             self[orderDictionary[columnName]]('DESC');
         }
     };
@@ -783,33 +914,6 @@ var CourseViewModel = function () {
      * PDF functions
      */
 
-    self.pdfTest = function () {
-        var docDefinition = {
-            content: [
-              {
-                  //layout: 'lightHorizontalLines', // optional
-                  table: {
-                      // headers are automatically repeated if the table spans over multiple pages
-                      // you can declare how many rows should be treated as headers
-                      headerRows: 1,
-                      widths: ['*', 'auto', 100, '*'],
-
-                      body: [
-                        ['First', 'Second', 'Third', 'The last one'],
-                        ['Value 1', 'Value 2', 'Value 3', 'Value 4'],
-                        [{ text: 'Bold value', bold: true }, 'Val 2', 'Val 3', 'Val 4']
-                      ]
-                  }
-              }
-            ]
-        };
-        pdfMake.createPdf(docDefinition).open();
-    };
-
-    self.printCourseReport = function () {
-
-    };
-
     self.printCourseAssignedReport = function (course) {
         pdfTools.printCourseAssignedReport(course.courseId);
     };
@@ -827,7 +931,7 @@ var CourseViewModel = function () {
 $('.popoverBtn').popover({
     placement: 'left',
     content: 'For a recommended assignment, a PhD student may have up to 8 different (full) 140hr assignments, while a Masters student may have up to 3 different 140hr assignments. ' + 
-        'As well, a course may have one TA for up to every 50 students in the course. i.e. A course with 65 students may have 2 TAs.'
+        'As well, a course may have one TA for up to every 50 students in the course. i.e. A course with 65 students may have 2 TAs. TAs with a green background have taught this course before.'
 });
 
 ko.applyBindings(new CourseViewModel());

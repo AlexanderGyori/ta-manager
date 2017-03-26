@@ -77,6 +77,24 @@ taManager.get('/profile',
     }
 );
 
+// =========================================== GENERIC CALLS ==========================================
+
+var assignTa = function (res, db, userId, courseId, assignType) {
+    return db.query('INSERT INTO thesis."CourseTaAssigns"("UserId", "CourseId", "AssignType") VALUES ($1, $2, $3);', [userId, courseId, assignType])
+        .then(function (data) {
+            res.send();
+        })
+        .catch(function (error) {
+            console.log('ERROR: ', error);
+            res.sendStatus(500);
+        });
+};
+
+var getAssignmentSchedule = function (db) {
+    return db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "UserId" AS "userId", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
+        '"AssignType" AS "assignType" FROM thesis."Course" course JOIN thesis."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL;');
+};
+
 // =========================================== COURSES PAGE ===========================================
 taManager.get('/getAllCourses', function (req, res) {
     db.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", "HasLab" AS "hasLab", "IsActive" AS "isActive" FROM thesis."Course" ORDER BY "CourseCode" ASC;')
@@ -162,7 +180,7 @@ taManager.post('/removeCourse', function (req, res) {
 
 taManager.get('/getAllTasForCourse', function (req, res) {
     var courseId = req.query.courseId;
-    db.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ta."StudentType" AS "studentType", assign."AssignType" AS "assignType" ' +
+    db.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ta."StudentType" AS "studentType", assign."AssignType" AS "assignType", ta."IsActive" as "isActive" ' +
         'FROM thesis."CourseTaAssigns" assign INNER JOIN thesis."TeachingAssistant" ta ON assign."UserId" = ta."UserId" WHERE assign."CourseId" = $1 GROUP BY ta."UserId", assign."AssignType" ORDER BY ta."LastName" ASC', [courseId])
         .then(function (data) {
             res.send(data);
@@ -193,7 +211,7 @@ taManager.get('/getAllPreviousTasForCourse', function (req, res) {
 
 taManager.get('/getUnassignedTasForCourse', function (req, res) {
     var courseId = req.query.courseId;
-    db.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" as "studentNumber" ' +
+    db.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" as "studentNumber", ta."IsActive" as "isActive" ' +
         'FROM thesis."TeachingAssistant" ta LEFT OUTER JOIN (SELECT * FROM thesis."CourseTaAssigns" WHERE "CourseId" = $1) assign ' +
         'ON ta."UserId" = assign."UserId" ' +
         'WHERE assign."UserId" is null ' +
@@ -246,6 +264,18 @@ taManager.get('/getCourseTaAssignsBetweenDates', function (req, res) {
     });
 });
 
+taManager.get('/getPreviouslyTaughtForCourse', function (req, res) {
+    var courseCode = req.query.courseCode;
+    db.query('SELECT assign."UserId" AS "userId" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ON assign."CourseId" = course."CourseId" ' +
+    'WHERE course."CourseCode" = $1 GROUP BY assign."UserId" ;', [courseCode])
+    .then(function (data) {
+        res.send(data);
+    })
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
+});
+
 
 // =========================================== TEACHING ASSISTANTS PAGE ===========================================
 
@@ -261,15 +291,29 @@ var sanitizeStudentType = function (studentType) {
     }
 };
 
+var sanitizeTa = function (ta) {
+    ta.studentType = sanitizeStudentType(ta.studentType);
+    ta.studentNumber = ta.studentNumber ? ta.studentNumber : null;
+    return ta;
+};
+
 taManager.get('/getAllTas', function (req, res) {
-    db.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' + 
+    db.task(t => {
+        return db.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' +
         '"IsActive" AS "isActive" FROM thesis."TeachingAssistant" ORDER BY "UserId" ASC;')
-        .then(function (data) {
-            res.send(data);
-        })
-        .catch(function (error) {
-            console.log('ERROR: ', error);
+        .then(tas => {
+            return getAssignmentSchedule(t)
+            .then(assignmentSchedule => {
+                tas.map(function (ta) {
+                    return formatTa(ta, assignmentSchedule);
+                });
+                res.send(tas);
+            });
         });
+    })
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
 });
 
 taManager.get('/getTa', function (req, res) {
@@ -286,7 +330,7 @@ taManager.get('/getTa', function (req, res) {
 
 taManager.post('/addTa', function (req, res) {
     var ta = req.body;
-    ta.studentType = sanitizeStudentType(ta.studentType);
+    ta = sanitizeTa(ta);
     db.query('INSERT INTO thesis."TeachingAssistant"("UserId", "StudentNumber", "FirstName", "LastName", "Email", "StudentType", "IsActive") ' +
         'VALUES ($1, $2, $3, $4, $5, $6, $7);', [ta.userId, ta.studentNumber, ta.firstName, ta.lastName, ta.email, ta.studentType, ta.isActive])
         .then(function (data) {
@@ -299,7 +343,7 @@ taManager.post('/addTa', function (req, res) {
 
 taManager.post('/editTa', function (req, res) {
     var ta = req.body;
-    ta.studentType = sanitizeStudentType(ta.studentType);
+    ta = sanitizeTa(ta);
     db.query('UPDATE thesis."TeachingAssistant" SET "StudentNumber" = $1, "FirstName" = $2, "LastName" = $3, "Email" = $4, "StudentType" = $5, "IsActive" = $6 WHERE "UserId" = $7',
         [ta.studentNumber, ta.firstName, ta.lastName, ta.email, ta.studentType, ta.isActive, ta.userId])
         .then(function (data) {
@@ -353,7 +397,7 @@ taManager.get('/getAllActiveTas', function (req, res) {
 taManager.get('/getAllCoursesForAllActiveTas', function (req, res) {
     db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
         '"HasLab" AS "hasLab", course."IsActive" AS "isActive", ta."UserId" as "userId" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ON assign."CourseId" = course."CourseId" ' +
-        'JOIN thesis."TeachingAssistant" ta ON ta."UserId" = assign."UserId" WHERE ta."IsActive" = true')
+        'JOIN thesis."TeachingAssistant" ta ON ta."UserId" = assign."UserId" WHERE ta."IsActive" = true ORDER BY course."CourseCode" ASC;')
     .then(function (courses) {
         res.send(courses);
     })
@@ -365,8 +409,8 @@ taManager.get('/getAllCoursesForAllActiveTas', function (req, res) {
 taManager.get('/getAllCoursesForTa', function (req, res) {
     var userId = req.query.userId;
     db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-        '"HasLab" AS "hasLab", "IsActive" AS "isActive" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ON assign."CourseId" = course."CourseId" WHERE assign."UserId" = $1 ' + 
-        'ORDER BY course."CourseCode" ASC;', [userId])
+        '"HasLab" AS "hasLab", "IsActive" AS "isActive", assign."AssignType" as "assignType" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ' + 
+        'ON assign."CourseId" = course."CourseId" WHERE assign."UserId" = $1 ORDER BY course."CourseCode" ASC;', [userId])
     .then(function (courses) {
         res.send(courses);
     })
@@ -724,17 +768,6 @@ taManager.post('/assignTaToCourse', function (req, res) {
     }
     
 });
-
-var assignTa = function (res, db, userId, courseId, assignType) {
-    return db.query('INSERT INTO thesis."CourseTaAssigns"("UserId", "CourseId", "AssignType") VALUES ($1, $2, $3);', [userId, courseId, assignType])
-        .then(function (data) {
-            res.send();
-        })
-        .catch(function (error) {
-            console.log('ERROR: ', error);
-            res.sendStatus(500);
-        });
-};
 
 taManager.post('/unassignTaToCourse', function (req, res) {
     var assign = req.body;

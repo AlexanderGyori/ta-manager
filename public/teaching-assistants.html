@@ -86,6 +86,8 @@
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li><a href="#" data-bind="click: $parent.displayEditTaModal">Edit TA</a></li>
+                                    <li><a href="#" data-bind="click: $parent.displayViewCoursesModal">View Courses</a></li>
+                                    <li><a href="#" data-bind="click: $parent.displayViewSupervisorsModal">View Supervisors</a></li>
                                     <li class="divider"></li>
                                     <li><a href="#" data-bind="click: $parent.printTaReport">Print TA Report</a></li>
                                     <li class="divider"></li>
@@ -253,6 +255,88 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" data-bind="click: function () { removeTa(removeTaModal) }">Delete</button>
                         <button type="button" class="btn btn-default" data-bind="click: closeRemoveTaModal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="viewCoursesModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-bind="click: closeViewCoursesModal"><span>&times;</span></button>
+                        <h4 class="modal-title" data-bind="text: viewCoursesModal.name"></h4>
+                        <div data-bind="text: viewCoursesModal.userId"></div>
+                        <div data-bind="text: viewCoursesModal.email"></div>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th class="columnHeader">Course Code</th>
+                                            <th class="columnHeader">Title</th>
+                                            <th class="columnHeader">Students</th>
+                                            <th class="columnHeader">Start Term</th>
+                                            <th class="columnHeader">End Term</th>
+                                            <th class="columnHeader">Lab</th>
+                                            <th class="columnHeader">Active</th>
+                                            <th class="columnHeader">Assignment</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-bind="foreach: { data: viewCoursesModal.courseList, as: 'course' }">
+                                        <tr class="parentRow">
+                                            <td data-bind="text: course.courseCode"></td>
+                                            <td data-bind="text: course.title"></td>
+                                            <td data-bind="text: course.studentCount"></td>
+                                            <td data-bind="text: course.startDate"></td>
+                                            <td data-bind="text: course.endDate"></td>
+                                            <td><span data-bind="css: { 'glyphicon-ok': course.hasLab, 'glyphicon-remove': !course.hasLab }" class="glyphicon"></span></td>
+                                            <td><span data-bind="css: { 'glyphicon-ok': course.isActive, 'glyphicon-remove': !course.isActive }" class="glyphicon"></span></td>
+                                            <td data-bind="text: course.assignType"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-bind="click: closeViewCoursesModal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="viewSupervisorsModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-bind="click: closeViewSupervisorsModal"><span>&times;</span></button>
+                        <h4 class="modal-title" data-bind="text: viewSupervisorsModal.name"></h4>
+                        <div data-bind="text: viewSupervisorsModal.userId"></div>
+                        <div data-bind="text: viewSupervisorsModal.email"></div>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th class="columnHeader">Name</th>
+                                            <th class="columnHeader">Email</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-bind="foreach: { data: viewSupervisorsModal.supervisorList, as: 'supervisor' }">
+                                        <tr class="parentRow">
+                                            <td data-bind="text: supervisor.name"></td>
+                                            <td data-bind="text: supervisor.email"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-bind="click: closeViewSupervisorsModal">Close</button>
                     </div>
                 </div>
             </div>

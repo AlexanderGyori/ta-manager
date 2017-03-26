@@ -335,7 +335,7 @@
                     <div class="container-fluid">
                         <div class="modal-header">
                             <button type="button" class="close" data-bind="click: closeAssignTaModal"><span>&times;</span></button>
-                            <h4 class="modal-title">Assign TA to Course</h4>
+                            <h4 class="modal-title">Assign TA to Course</h4><h4 class="modal-title" data-bind="text: assignTaModal.title"></h4>
                         </div>
                         <div class="modal-body">
                             <div class="row">
@@ -372,10 +372,20 @@
                                     </div>
                                     <div class="row">
                                         <div class="col-md-12">
-                                            <table class="table" style="">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedUserIdOrder') }">User Id</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedNameOrder') }">Name</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedEmailOrder') }">Email</th>
+                                                        <th class="columnHeader">Assignment</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedIsActiveOrder') }">Active</th>
+                                                        <th class="columnHeader"></th>
+                                                    </tr>
+                                                </thead>
                                                 <tbody data-bind="foreach: { data: assignTaModal.unassignedTas, as: 'ta' }">
                                                     <!-- ko if: isVisible -->
-                                                    <tr class="parentRow">
+                                                    <tr class="parentRow" data-bind="css: {'highlighted': ta.previouslyAssigned}">
                                                         <td data-bind="text: ta.userId"></td>
                                                         <td data-bind="text: ta.name"></td>
                                                         <td data-bind="text: ta.email"></td>
@@ -383,6 +393,7 @@
                                                             <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.toggleAssignType(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'FULL' }">Full</button>
                                                             <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.toggleAssignType(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'HALF' }">Half</button>
                                                         </td>
+                                                        <td><span data-bind="css: { 'glyphicon-ok': ta.isActive, 'glyphicon-remove': !ta.isActive }" class="glyphicon"></span></td>
                                                         <td><button class="btn btn-default pull-right" data-bind="click: function () { $parent.assignTa(ta.userId, $parent.assignTaModal.courseId(), ta.assignType(), true, function () { $parent.assignTaModal.moveTaToAssigned(ta.userId); }); }"><span class="glyphicon glyphicon-chevron-right"></span></button></td>
                                                     </tr>
                                                     <!-- /ko -->
@@ -405,6 +416,16 @@
                                     <div class="row">
                                         <div class="col-md-12">
                                             <table class="table" style="">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="columnHeader"></th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeAssignedOrder('assignedUserIdOrder') }">User Id</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeAssignedOrder('assignedNameOrder') }">Name</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeAssignedOrder('assignedEmailOrder') }">Email</th>
+                                                        <th class="columnHeader">Assignment</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeAssignedOrder('assignedIsActiveOrder') }">Active</th>
+                                                    </tr>
+                                                </thead>
                                                 <tbody data-bind="foreach: { data: assignTaModal.assignedTas, as: 'ta' }">
                                                     <tr class="parentRow">
                                                         <td><button class="btn btn-default pull-left" data-bind="click: $parent.unassignTa"><span class="glyphicon glyphicon-chevron-left"></span></button></td>
@@ -415,6 +436,7 @@
                                                             <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.updateCourseTaAssignment(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'FULL' }">Full</button>
                                                             <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.updateCourseTaAssignment(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'HALF' }">Half</button>
                                                         </td>
+                                                        <td><span data-bind="css: { 'glyphicon-ok': ta.isActive, 'glyphicon-remove': !ta.isActive }" class="glyphicon"></span></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -524,7 +546,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-6 form-group">
+                            <div class="col-md-6 form-group" data-bind="css: {'has-error': termReportModal.hasDateError }">
                                 <label>Start Term</label>
                                 <div class="form-inline">
                                     <div class="form-group">
@@ -542,7 +564,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6 form-group">
+                            <div class="col-md-6 form-group" data-bind="css: {'has-error': termReportModal.hasDateError }">
                                 <label>End Term</label>
                                 <div class="form-inline">
                                     <div class="form-group">
