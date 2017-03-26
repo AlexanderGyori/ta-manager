@@ -223,6 +223,16 @@
                                     <div class="row">
                                         <div class="col-md-12">
                                             <table class="table" style="">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedUserIdOrder') }">User Id</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedNameOrder') }">Name</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedEmailOrder') }">Email</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedStudentNumberOrder') }">Student Number</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedIsActiveOrder') }">Active</th>
+                                                        <th class="columnHeader"></th>
+                                                    </tr>
+                                                </thead>
                                                 <tbody data-bind="foreach: { data: assignTaModal.unassignedTas, as: 'ta' }">
                                                     <!-- ko if: isVisible -->
                                                     <tr class="parentRow">
@@ -230,6 +240,7 @@
                                                         <td data-bind="text: ta.name"></td>
                                                         <td data-bind="text: ta.email"></td>
                                                         <td data-bind="text: ta.studentNumber"></td>
+                                                        <td><span data-bind="css: { 'glyphicon-ok': ta.isActive, 'glyphicon-remove': !ta.isActive }" class="glyphicon"></span></td>
                                                         <td><button class="btn btn-default pull-right" data-bind="click: $parent.assignTa"><span class="glyphicon glyphicon-chevron-right"></span></button></td>
                                                     </tr>
                                                     <!-- /ko -->
@@ -247,6 +258,16 @@
                                     <div class="row">
                                         <div class="col-md-12">
                                             <table class="table" style="">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="columnHeader"></th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('assignedUserIdOrder') }">User Id</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('assignedNameOrder') }">Name</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('assignedEmailOrder') }">Email</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('assignedStudentNumberOrder') }">Student Number</th>
+                                                        <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('assignedIsActiveOrder') }">Active</th>                                                        
+                                                    </tr>
+                                                </thead>
                                                 <tbody data-bind="foreach: { data: assignTaModal.assignedTas, as: 'ta' }">
                                                     <tr class="parentRow">
                                                         <td><button class="btn btn-default pull-left" data-bind="click: $parent.unassignTa"><span class="glyphicon glyphicon-chevron-left"></span></button></td>
@@ -254,6 +275,7 @@
                                                         <td data-bind="text: ta.name"></td>
                                                         <td data-bind="text: ta.email"></td>
                                                         <td data-bind="text: ta.studentNumber"></td>
+                                                        <td><span data-bind="css: { 'glyphicon-ok': ta.isActive, 'glyphicon-remove': !ta.isActive }" class="glyphicon"></span></td>
                                                     </tr>
                                                 </tbody>
                                             </table>

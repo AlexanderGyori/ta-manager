@@ -72,7 +72,8 @@ var CourseViewModel = function () {
         courseTitle: ko.observable(''),
         title: ko.observable(''),
         taFullAssignValue: ko.observable(0),
-        taHalfAssignValue: ko.observable(0)
+        taHalfAssignValue: ko.observable(0),
+        courseTaMax: ko.observable(0)
     };
 
     self.removeCourseModal = {
@@ -462,6 +463,7 @@ var CourseViewModel = function () {
         var endDateStr = dateTools.buildStartDatePgpString(course.endDateTerm, course.endDateYear);
         self.assignTaModal.taFullAssignValue(dateTools.convertDateRangeToTermCount(startDateStr, endDateStr));
         self.assignTaModal.taHalfAssignValue(dateTools.convertDateRangeToTermCount(startDateStr, endDateStr) * 0.5);
+        self.assignTaModal.courseTaMax(Math.ceil(+course.studentCount / 50));
     };
 
     self.pushTaToCourseList = function (courseId, ta) {

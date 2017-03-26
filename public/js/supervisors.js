@@ -307,19 +307,85 @@ var SupervisorViewModel = function () {
      * Sort functions
      */
 
+    var createOrderSubscribe = function (observableArray, columnName, columnType) {
+        return function (newOrder) {
+            if (newOrder === 'ASC' || newOrder === 'DESC') {
+                observableArray(tableTools.sort(observableArray(), columnName, newOrder, columnType));
+            }
+        };
+    };
+
     self.nameOrder = ko.observable('');
-    self.nameOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.supervisorList(tableTools.sort(self.supervisorList(), 'name', newOrder, 'String'));
-        }
-    });
+    self.nameOrder.subscribe(createOrderSubscribe(self.supervisorList, 'name', 'String'));
 
     self.emailOrder = ko.observable('');
-    self.emailOrder.subscribe(function (newOrder) {
-        if (newOrder === 'ASC' || newOrder === 'DESC') {
-            self.supervisorList(tableTools.sort(self.supervisorList(), 'email', newOrder, 'String'));
+    self.emailOrder.subscribe(createOrderSubscribe(self.supervisorList, 'email', 'String'));
+
+    self.assignTaModal.unassignedUserIdOrder = ko.observable('');
+    self.assignTaModal.unassignedUserIdOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'userId', 'String'));
+
+    self.assignTaModal.unassignedNameOrder = ko.observable('');
+    self.assignTaModal.unassignedNameOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'name', 'String'));
+
+    self.assignTaModal.unassignedEmailOrder = ko.observable('');
+    self.assignTaModal.unassignedEmailOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'email', 'String'));
+
+    self.assignTaModal.unassignedStudentNumberOrder = ko.observable('');
+    self.assignTaModal.unassignedStudentNumberOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'studentNumber', 'Boolean'));
+
+    self.assignTaModal.unassignedIsActiveOrder = ko.observable('');
+    self.assignTaModal.unassignedIsActiveOrder.subscribe(createOrderSubscribe(self.assignTaModal.unassignedTas, 'isActive', 'Boolean'));
+
+    self.assignTaModal.assignedUserIdOrder = ko.observable('');
+    self.assignTaModal.assignedUserIdOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'userId', 'String'));
+
+    self.assignTaModal.assignedNameOrder = ko.observable('');
+    self.assignTaModal.assignedNameOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'name', 'String'));
+
+    self.assignTaModal.assignedEmailOrder = ko.observable('');
+    self.assignTaModal.assignedEmailOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'email', 'String'));
+
+    self.assignTaModal.assignedStudentNumberOrder = ko.observable('');
+    self.assignTaModal.assignedStudentNumberOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'studentNumber', 'Boolean'));
+
+    self.assignTaModal.assignedIsActiveOrder = ko.observable('');
+    self.assignTaModal.assignedIsActiveOrder.subscribe(createOrderSubscribe(self.assignTaModal.assignedTas, 'isActive', 'Boolean'));
+
+    self.assignTaModal.clearUnassignedOrders = function () {
+        self.assignTaModal.unassignedUserIdOrder('');
+        self.assignTaModal.unassignedNameOrder('');
+        self.assignTaModal.unassignedEmailOrder('');
+        self.assignTaModal.unassignedIsActiveOrder('');
+    };
+
+    self.assignTaModal.clearAssignedOrders = function () {
+        self.assignTaModal.assignedUserIdOrder('');
+        self.assignTaModal.assignedNameOrder('');
+        self.assignTaModal.assignedEmailOrder('');
+        self.assignTaModal.assignedIsActiveOrder('');
+    };
+
+    self.assignTaModal.changeUnassignedOrder = function (orderName) {
+        var selectedOrder = self.assignTaModal[orderName]();
+        if (!selectedOrder || selectedOrder === 'DESC') {
+            self.assignTaModal.clearUnassignedOrders();
+            self.assignTaModal[orderName]('ASC');
+        } else {
+            self.assignTaModal.clearUnassignedOrders();
+            self.assignTaModal[orderName]('DESC');
         }
-    });
+    };
+
+    self.assignTaModal.changeAssignedOrder = function (orderName) {
+        var selectedOrder = self.assignTaModal[orderName]();
+        if (!selectedOrder || selectedOrder === 'DESC') {
+            self.assignTaModal.clearAssignedOrders();
+            self.assignTaModal[orderName]('ASC');
+        } else {
+            self.assignTaModal.clearAssignedOrders();
+            self.assignTaModal[orderName]('DESC');
+        }
+    };
 
     var clearOrders = function () {
         self.nameOrder('');

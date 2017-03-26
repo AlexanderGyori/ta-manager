@@ -504,8 +504,8 @@ taManager.post('/removeSupervisor', function (req, res) {
 
 taManager.get('/getAllTasForSupervisor', function (req, res) {
     var supervisorId = req.query.supervisorId;
-    db.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ta."StudentType" AS "studentType" ' +
-        'FROM thesis."SupervisorTaAssigns" supervisor INNER JOIN thesis."TeachingAssistant" ta ON supervisor."UserId" = ta."UserId" WHERE supervisor."SupervisorId" = $1 GROUP BY ta."UserId" ORDER BY ta."LastName" ASC', [supervisorId])
+    db.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ta."StudentType" AS "studentType", ' +
+        'ta."IsActive" AS "isActive" FROM thesis."SupervisorTaAssigns" supervisor INNER JOIN thesis."TeachingAssistant" ta ON supervisor."UserId" = ta."UserId" WHERE supervisor."SupervisorId" = $1 GROUP BY ta."UserId" ORDER BY ta."LastName" ASC', [supervisorId])
         .then(function (data) {
             res.send(data);
         })
