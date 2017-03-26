@@ -180,14 +180,23 @@ taManager.post('/removeCourse', function (req, res) {
 
 taManager.get('/getAllTasForCourse', function (req, res) {
     var courseId = req.query.courseId;
-    db.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ta."StudentType" AS "studentType", assign."AssignType" AS "assignType", ta."IsActive" as "isActive" ' +
-        'FROM thesis."CourseTaAssigns" assign INNER JOIN thesis."TeachingAssistant" ta ON assign."UserId" = ta."UserId" WHERE assign."CourseId" = $1 GROUP BY ta."UserId", assign."AssignType" ORDER BY ta."LastName" ASC', [courseId])
-        .then(function (data) {
-            res.send(data);
+    db.task(t => {
+        return t.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ' +
+        'ta."StudentType" AS "studentType", assign."AssignType" AS "assignType", ta."IsActive" as "isActive" FROM thesis."CourseTaAssigns" assign ' +
+        'INNER JOIN thesis."TeachingAssistant" ta ON assign."UserId" = ta."UserId" WHERE assign."CourseId" = $1 GROUP BY ta."UserId", assign."AssignType" ORDER BY ta."LastName" ASC', [courseId])
+        .then(tas => {
+            return getAssignmentSchedule(t)
+            .then(assignmentSchedule => {
+                tas = tas.map(function (ta) {
+                    return formatTa(ta, assignmentSchedule);
+                });
+                res.send(tas);
+            });
         })
-        .catch(function (error) {
-            console.log('ERROR: ', error);
-        });
+    })
+    .catch(function (error) {
+        console.log('ERROR: ', error);
+    });
 });
 
 taManager.get('/getAllPreviousTasForCourse', function (req, res) {
@@ -211,15 +220,24 @@ taManager.get('/getAllPreviousTasForCourse', function (req, res) {
 
 taManager.get('/getUnassignedTasForCourse', function (req, res) {
     var courseId = req.query.courseId;
-    db.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" as "studentNumber", ta."IsActive" as "isActive" ' +
+    db.task(t => {
+        return t.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentType" AS "studentType", ta."StudentNumber" as "studentNumber", ta."IsActive" as "isActive" ' +
         'FROM thesis."TeachingAssistant" ta LEFT OUTER JOIN (SELECT * FROM thesis."CourseTaAssigns" WHERE "CourseId" = $1) assign ' +
         'ON ta."UserId" = assign."UserId" ' +
         'WHERE assign."UserId" is null ' +
         'GROUP BY ta."UserId" ' +
         'ORDER BY ta."LastName" ASC;', [courseId])
-        .then(function (data) {
-            res.send(data);
-        })
+        .then(tas => {
+            return getAssignmentSchedule(t)
+            .then(assignmentSchedule => {
+                tas = tas.map(function (ta) {
+                    return formatTa(ta, assignmentSchedule);
+                });
+                res.send(tas);
+            });
+        });
+    })
+        
         .catch(function (error) {
             console.log('ERROR: ', error);
         });
@@ -243,7 +261,7 @@ taManager.get('/getCourseTaAssignsBetweenDates', function (req, res) {
             'ta."IsActive" AS "isActive" FROM thesis."TeachingAssistant" ta JOIN thesis."CourseTaAssigns" assign ON ta."UserId" = assign."UserId" JOIN thesis."Course" course ON course."CourseId" = ' + 
             'assign."CourseId" WHERE course."IsActive" = true')
             .then(tasToActiveCourses => {
-                activeCourses.map(function (course) {
+                activeCourses = activeCourses.map(function (course) {
                     course.taList = tasToActiveCourses.filter(function (ta) {
                         return course.courseId === ta.assignedCourseId;
                     });
@@ -304,7 +322,7 @@ taManager.get('/getAllTas', function (req, res) {
         .then(tas => {
             return getAssignmentSchedule(t)
             .then(assignmentSchedule => {
-                tas.map(function (ta) {
+                tas = tas.map(function (ta) {
                     return formatTa(ta, assignmentSchedule);
                 });
                 res.send(tas);
@@ -382,7 +400,7 @@ taManager.get('/getAllActiveTas', function (req, res) {
             '"AssignType" AS "assignType" FROM thesis."Course" course JOIN thesis."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" ' + 
             'WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL;')
             .then(assignmentSchedule => {
-                activeTas.map(function (ta) {
+                activeTas = activeTas.map(function (ta) {
                     return formatTa(ta, assignmentSchedule);
                 });
                 res.send(activeTas);
@@ -615,7 +633,7 @@ var largestAssignTaToCourse = function (ta, course, assignmentSchedule) {
     }
     var maximumAssignmentsAllowedForCourse = (1 - largestOverlap) * course.courseTermCount;
     var taAssignmentsRemaining = ta.maxAssigns - ta.numOfAssigns;
-    if (maximumAssignmentsAllowedForCourse > taAssignmentsRemaining || attempts === maxAttempts) {
+    if (maximumAssignmentsAllowedForCourse > taAssignmentsRemaining || taAssignmentsRemaining <= 0 || attempts === maxAttempts) {
         return '';
     } else {
         return maxAssignTypeForCourse;
@@ -739,12 +757,11 @@ taManager.post('/assignTaToCourse', function (req, res) {
                     '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
                     '(SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount" FROM thesis."Course" course WHERE "CourseId" = $1;', [courseId])
                 .then(course => {
-                    return t.query('SELECT * FROM thesis."Course" course JOIN thesis."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" ' +
-                        'WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL AND assign."UserId" = $1;', [userId])
-                    .then(taAssignmentSchedule => {
-                        ta = formatTa(ta, taAssignmentSchedule);
+                    return getAssignmentSchedule(t)
+                    .then(assignmentSchedule => {
+                        ta = formatTa(ta, assignmentSchedule);
                         course = formatCourse(course);
-                        var x = largestAssignTaToCourse(ta, course, taAssignmentSchedule);
+                        var x = largestAssignTaToCourse(ta, course, assignmentSchedule);
                         var assignmentSizeDict = {
                             "FULL": 2,
                             "HALF": 1,

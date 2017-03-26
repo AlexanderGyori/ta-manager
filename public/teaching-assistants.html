@@ -67,6 +67,7 @@
                         <th class="columnHeader" data-bind="click: function () { changeOrder('studentType'); }">Type</th>
                         <th class="columnHeader" data-bind="click: function () { changeOrder('studentNumber'); }">Student Number</th>
                         <th class="columnHeader" data-bind="click: function () { changeOrder('isActive'); }">Active</th>
+                        <th class="columnHeader">Assignments</th>
                         <th class="columnHeader">Edit</th>
                     </tr>
                 </thead>
@@ -79,6 +80,7 @@
                         <td data-bind="text: studentType"></td>
                         <td data-bind="text: studentNumber"></td>
                         <td><span data-bind="css: { 'glyphicon-ok': isActive, 'glyphicon-remove': !isActive }" class="glyphicon"></span></td>
+                        <td><span data-bind="text: assignFraction"></span></td>
                         <td>
                             <div class="dropdown">
                                 <button type="button" class="btn btn-default dropdown-toggle dropdown" data-toggle="dropdown">

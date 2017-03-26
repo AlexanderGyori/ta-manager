@@ -49,6 +49,11 @@ var TaViewModel = function () {
         tas.forEach(function (ta, i) {
             ta.isVisible = ko.observable(true);
             ta.name = (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a');
+            ta.numOfAssigns = ko.observable(+ta.numOfAssigns || 0);
+            ta.maxAssigns = ko.observable(+ta.maxAssigns || 0);
+            ta.assignFraction = ko.computed(function () {
+                return ta.numOfAssigns() + '/' + ta.maxAssigns();
+            });
             self.taList.push(ta);
         });
     };

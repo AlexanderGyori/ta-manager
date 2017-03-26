@@ -70,7 +70,9 @@ var CourseViewModel = function () {
         courseId: ko.observable(null),
         courseCode: ko.observable(''),
         courseTitle: ko.observable(''),
-        title: ko.observable('')
+        title: ko.observable(''),
+        taFullAssignValue: ko.observable(0),
+        taHalfAssignValue: ko.observable(0)
     };
 
     self.removeCourseModal = {
@@ -127,6 +129,14 @@ var CourseViewModel = function () {
         xhttp.send();
     };
 
+    var setTaAssignCounts = function (ta) {
+        ta.numOfAssigns = ko.observable(+ta.numOfAssigns || 0);
+        ta.maxAssigns = ko.observable(+ta.maxAssigns || 0);
+        ta.assignFraction = ko.computed(function () {
+            return ta.numOfAssigns() + '/' + ta.maxAssigns();
+        });
+    };
+
     self.getTasInCourse = function (course) {
         var xhttp = new XMLHttpRequest();
         xhttp.open("GET", "getAllTasForCourse?courseId="+course.courseId, true);
@@ -136,6 +146,7 @@ var CourseViewModel = function () {
                 taList.forEach(function (ta) {
                     ta.name = (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a');
                     ta.assignType = ko.observable(ta.assignType || '');
+                    setTaAssignCounts(ta);
                 });
                 course.taList(taList);
             }
@@ -397,11 +408,12 @@ var CourseViewModel = function () {
             ta.isVisible = ko.observable(true);
             ta.assignType = ko.observable("Full");
             ta.name = (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a');
+            setTaAssignCounts(ta);
             self.assignTaModal.unassignedTas.push(ta);
         });
     };
 
-    self.assignTaModal.setAssignedTaList = function (taList, previouslyAssignedTas) {
+    self.assignTaModal.setAssignedTaList = function (taList) {
         self.assignTaModal.assignedTas.removeAll();
         taList.forEach(function (ta) {
             self.assignTaModal.assignedTas.push(ta);
@@ -446,6 +458,10 @@ var CourseViewModel = function () {
         } else {
             self.assignTaModal.title('');
         }
+        var startDateStr = dateTools.buildStartDatePgpString(course.startDateTerm, course.startDateYear);
+        var endDateStr = dateTools.buildStartDatePgpString(course.endDateTerm, course.endDateYear);
+        self.assignTaModal.taFullAssignValue(dateTools.convertDateRangeToTermCount(startDateStr, endDateStr));
+        self.assignTaModal.taHalfAssignValue(dateTools.convertDateRangeToTermCount(startDateStr, endDateStr) * 0.5);
     };
 
     self.pushTaToCourseList = function (courseId, ta) {
@@ -470,6 +486,7 @@ var CourseViewModel = function () {
             return userId === ta.userId;
         };
         var ta = self.assignTaModal.unassignedTas().find(isUserTa);
+        ta.numOfAssigns(+ta.numOfAssigns() + (ta.assignType() === 'Full' ? self.assignTaModal.taFullAssignValue() : self.assignTaModal.taHalfAssignValue()));
         self.assignTaModal.unassignedTas.remove(isUserTa);
         self.assignTaModal.assignedTas.push(ta);
         self.pushTaToCourseList(self.assignTaModal.courseId(), ta);
@@ -480,14 +497,20 @@ var CourseViewModel = function () {
             return userId === ta.userId;
         };
         var ta = self.assignTaModal.assignedTas().find(isUserTa);
+        ta.numOfAssigns(+ta.numOfAssigns() - (ta.assignType() === 'Full' ? self.assignTaModal.taFullAssignValue() : self.assignTaModal.taHalfAssignValue()));
         ta.isVisible = ko.observable(true);
         self.assignTaModal.assignedTas.remove(isUserTa);
         self.assignTaModal.unassignedTas.push(ta);
         self.removeTaFromCourse(self.assignTaModal.courseId(), ta);
     };
 
-    self.assignTaModal.toggleAssignType = function (ta) {
+    self.assignTaModal.toggleUnassignedAssignType = function (ta) {
         ta.assignType(ta.assignType().toUpperCase() === "FULL" ? "Half" : "Full");
+    };
+
+    self.assignTaModal.toggleAssignedAssignType = function (ta) {
+        ta.assignType(ta.assignType().toUpperCase() === "FULL" ? "Half" : "Full");
+        ta.numOfAssigns(ta.numOfAssigns() + (ta.assignType() === 'Full' ? self.assignTaModal.taHalfAssignValue() : -self.assignTaModal.taHalfAssignValue()));
     };
 
     self.assignTa = function (userId, courseId, assignType, giveWarnings, onSuccess) {
@@ -548,7 +571,7 @@ var CourseViewModel = function () {
         xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         xhttp.onreadystatechange = function () {
             if (this.readyState === 4 && this.status === 200) {
-                self.assignTaModal.toggleAssignType(ta);
+                self.assignTaModal.toggleAssignedAssignType(ta);
             }
         };
         xhttp.send(params);
@@ -600,8 +623,9 @@ var CourseViewModel = function () {
                     return assignment.course.courseId === newCourse.courseId;
                 }).map(function (assignment) {
                     var ta = assignment.ta;
-                    ta.assignType = assignment.assignType;
+                    ta.assignType = ko.observable(assignment.assignType);
                     ta.name = (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a');
+                    setTaAssignCounts(ta);
                     return ta;
                 }));
                 self.autoAssignModal.courseList.push(newCourse);
@@ -619,7 +643,7 @@ var CourseViewModel = function () {
                 var onSuccess = function () {
                     self.pushTaToCourseList(course.courseId, ta);
                 };
-                self.assignTa(ta.userId, course.courseId, ta.assignType, false, onSuccess);
+                self.assignTa(ta.userId, course.courseId, ta.assignType(), false, onSuccess);
             });
         });
         self.closeAutoAssignModal();

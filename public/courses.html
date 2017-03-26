@@ -381,6 +381,7 @@
                                                         <th class="columnHeader">Assignment</th>
                                                         <th class="columnHeader" data-bind="click: function () { assignTaModal.changeUnassignedOrder('unassignedIsActiveOrder') }">Active</th>
                                                         <th class="columnHeader"></th>
+                                                        <th class="columnHeader"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody data-bind="foreach: { data: assignTaModal.unassignedTas, as: 'ta' }">
@@ -390,10 +391,11 @@
                                                         <td data-bind="text: ta.name"></td>
                                                         <td data-bind="text: ta.email"></td>
                                                         <td class="btn-group">
-                                                            <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.toggleAssignType(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'FULL' }">Full</button>
-                                                            <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.toggleAssignType(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'HALF' }">Half</button>
+                                                            <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.toggleUnassignedAssignType(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'FULL' }">Full</button>
+                                                            <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.toggleUnassignedAssignType(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'HALF' }">Half</button>
                                                         </td>
                                                         <td><span data-bind="css: { 'glyphicon-ok': ta.isActive, 'glyphicon-remove': !ta.isActive }" class="glyphicon"></span></td>
+                                                        <td><span data-bind="text: ta.assignFraction"></span></td>
                                                         <td><button class="btn btn-default pull-right" data-bind="click: function () { $parent.assignTa(ta.userId, $parent.assignTaModal.courseId(), ta.assignType(), true, function () { $parent.assignTaModal.moveTaToAssigned(ta.userId); }); }"><span class="glyphicon glyphicon-chevron-right"></span></button></td>
                                                     </tr>
                                                     <!-- /ko -->
@@ -424,6 +426,7 @@
                                                         <th class="columnHeader" data-bind="click: function () { assignTaModal.changeAssignedOrder('assignedEmailOrder') }">Email</th>
                                                         <th class="columnHeader">Assignment</th>
                                                         <th class="columnHeader" data-bind="click: function () { assignTaModal.changeAssignedOrder('assignedIsActiveOrder') }">Active</th>
+                                                        <th class="columnHeader"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody data-bind="foreach: { data: assignTaModal.assignedTas, as: 'ta' }">
@@ -437,6 +440,7 @@
                                                             <button class="btn btn-default" data-bind="click: function () { $parent.assignTaModal.updateCourseTaAssignment(ta); }, css: { 'btn-primary active': ta.assignType().toUpperCase() === 'HALF' }">Half</button>
                                                         </td>
                                                         <td><span data-bind="css: { 'glyphicon-ok': ta.isActive, 'glyphicon-remove': !ta.isActive }" class="glyphicon"></span></td>
+                                                        <td><span data-bind="text: ta.assignFraction"></span></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
