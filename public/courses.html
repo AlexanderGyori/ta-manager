@@ -67,7 +67,8 @@
                         <th class="columnHeader" data-bind="click: function () { changeOrder('endDate'); }">End Term</th> 
                         <th class="columnHeader" data-bind="click: function () { changeOrder('hasLab'); }">Lab</th>
                         <th class="columnHeader" data-bind="click: function () { changeOrder('isActive'); }">Active</th>
-                        <th class="columnHeader">Edit</th>
+                        <th class="columnHeader">TAs</th>
+                        <th class="columnHeader"><div class="pull-right">Edit&nbsp;&nbsp;</div></th>
                     </tr>
                 </thead>
                 <tbody data-bind="foreach: { data: courseList, as: 'course' }">
@@ -80,25 +81,28 @@
                         <td data-toggle="collapse" data-bind="text: endDateTermYear, attr: { 'data-target': '#taList' + $index()}"></td>
                         <td data-toggle="collapse" data-bind="attr: { 'data-target': '#taList' + $index()}"><span data-bind="css: { 'glyphicon-ok': hasLab, 'glyphicon-remove': !hasLab }" class="glyphicon"></span></td>
                         <td data-toggle="collapse" data-bind="attr: { 'data-target': '#taList' + $index()}"><span data-bind="css: { 'glyphicon-ok': isActive, 'glyphicon-remove': !isActive }" class="glyphicon"></span></td>
+                        <td data-toggle="collapse" data-bind="text: assignFraction, attr: { 'data-target': '#taList' + $index()}"></td>
                         <td>
-                            <div class="dropdown">
-                                <button type="button" class="btn btn-default dropdown-toggle dropdown" data-toggle="dropdown">
-                                    <span class="glyphicon glyphicon-menu-hamburger"></span>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a href="#" data-bind="click: $parent.displayEditCourseModal">Edit course</a></li>
-                                    <li><a href="#" data-bind="click: $parent.displayAssignTaModal">Assign TA</a></li>
-                                    <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: $parent.printCourseAssignedReport">Print currently assigned report</a></li>
-                                    <li><a href="#" data-bind="click: $parent.printCoursePreviouslyAssignedReport">Print previously assigned report</a></li>
-                                    <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: $parent.displayRemoveCourseModal">Remove course</a></li>
-                                </ul>
+                            <div class="pull-right">
+                                <div class="dropdown">
+                                    <button type="button" class="btn btn-default dropdown-toggle dropdown" data-toggle="dropdown">
+                                        <span class="glyphicon glyphicon-menu-hamburger"></span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="#" data-bind="click: $parent.displayEditCourseModal">Edit course</a></li>
+                                        <li><a href="#" data-bind="click: $parent.displayAssignTaModal">Assign TA</a></li>
+                                        <li class="divider"></li>
+                                        <li><a href="#" data-bind="click: $parent.printCourseAssignedReport">Print currently assigned report</a></li>
+                                        <li><a href="#" data-bind="click: $parent.printCoursePreviouslyAssignedReport">Print previously assigned report</a></li>
+                                        <li class="divider"></li>
+                                        <li><a href="#" data-bind="click: $parent.displayRemoveCourseModal">Remove course</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </td>
                     </tr>
                     <tr class="collapse" data-bind="attr: { id: 'taList' + $index()}">
-                        <td colspan="8">
+                        <td colspan="9">
                             <table class="table childTable" data-bind="foreach: { data: course.taList, as: 'ta' }">
                                 <tr class="childRow">
                                     <td data-bind="text: ta.userId"></td>
@@ -336,7 +340,7 @@
                         <div class="modal-header">
                             <button type="button" class="close" data-bind="click: closeAssignTaModal"><span>&times;</span></button>
                             <h4 class="modal-title">Assign TA to Course</h4><h4 class="modal-title" data-bind="text: assignTaModal.title"></h4>
-                            <div><span>Maximum number of full 140hr assignments: </span><span data-bind="text: assignTaModal.courseTaMax"></span></div>
+                            <div><span>Number of full 140hr assignments: </span><span data-bind="text: assignTaModal.assignFraction"></span></div>
                         </div>
                         <div class="modal-body">
                             <div class="row">

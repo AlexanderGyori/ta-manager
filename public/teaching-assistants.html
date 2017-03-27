@@ -68,7 +68,7 @@
                         <th class="columnHeader" data-bind="click: function () { changeOrder('studentNumber'); }">Student Number</th>
                         <th class="columnHeader" data-bind="click: function () { changeOrder('isActive'); }">Active</th>
                         <th class="columnHeader">Assignments</th>
-                        <th class="columnHeader">Edit</th>
+                        <th class="columnHeader"><div class="pull-right">Edit&nbsp;&nbsp;</div></th>
                     </tr>
                 </thead>
                 <tbody data-bind="foreach: taList">
@@ -82,19 +82,21 @@
                         <td><span data-bind="css: { 'glyphicon-ok': isActive, 'glyphicon-remove': !isActive }" class="glyphicon"></span></td>
                         <td><span data-bind="text: assignFraction"></span></td>
                         <td>
-                            <div class="dropdown">
-                                <button type="button" class="btn btn-default dropdown-toggle dropdown" data-toggle="dropdown">
-                                    <span class="glyphicon glyphicon-menu-hamburger"></span>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a href="#" data-bind="click: $parent.displayEditTaModal">Edit TA</a></li>
-                                    <li><a href="#" data-bind="click: $parent.displayViewCoursesModal">View Courses</a></li>
-                                    <li><a href="#" data-bind="click: $parent.displayViewSupervisorsModal">View Supervisors</a></li>
-                                    <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: $parent.printTaReport">Print TA Report</a></li>
-                                    <li class="divider"></li>
-                                    <li><a href="#" data-bind="click: $parent.displayRemoveTaModal">Remove TA</a></li>
-                                </ul>
+                            <div class="pull-right">
+                                <div class="dropdown">
+                                    <button type="button" class="btn btn-default dropdown-toggle dropdown" data-toggle="dropdown">
+                                        <span class="glyphicon glyphicon-menu-hamburger"></span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="#" data-bind="click: $parent.displayEditTaModal">Edit TA</a></li>
+                                        <li><a href="#" data-bind="click: $parent.displayViewCoursesModal">View Courses</a></li>
+                                        <li><a href="#" data-bind="click: $parent.displayViewSupervisorsModal">View Supervisors</a></li>
+                                        <li class="divider"></li>
+                                        <li><a href="#" data-bind="click: $parent.printTaReport">Print TA Report</a></li>
+                                        <li class="divider"></li>
+                                        <li><a href="#" data-bind="click: $parent.displayRemoveTaModal">Remove TA</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </td>
                     </tr>

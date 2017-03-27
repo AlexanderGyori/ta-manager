@@ -73,8 +73,13 @@ var CourseViewModel = function () {
         title: ko.observable(''),
         taFullAssignValue: ko.observable(0),
         taHalfAssignValue: ko.observable(0),
-        courseTaMax: ko.observable(0)
+        courseNumOfAssigns: ko.observable(0),
+        courseMaxAssigns: ko.observable(0),
+        
     };
+    self.assignTaModal.assignFraction = ko.computed(function () {
+        return self.assignTaModal.courseNumOfAssigns() + '/' + self.assignTaModal.courseMaxAssigns();
+    });
 
     self.removeCourseModal = {
         courseId: ko.observable(null)
@@ -113,6 +118,11 @@ var CourseViewModel = function () {
             course.endDateTerm = (course.endDate ? dateTools.convertDateToTerm(course.endDate) : '');
             course.endDateYear = (course.endDate ? course.endDate.getFullYear() : '');
             course.endDateTermYear = (course.endDate ? course.endDateTerm + ', ' + course.endDateYear : '');
+            course.numOfAssigns = ko.observable(+course.numOfAssigns || 0);
+            course.maxAssigns = ko.observable(+course.maxAssigns || 0);
+            course.assignFraction = ko.computed(function () {
+                return course.numOfAssigns() + '/' + course.maxAssigns();
+            });
             self.getTasInCourse(course);
             self.courseList.push(course);
         });
@@ -463,7 +473,8 @@ var CourseViewModel = function () {
         var endDateStr = dateTools.buildStartDatePgpString(course.endDateTerm, course.endDateYear);
         self.assignTaModal.taFullAssignValue(dateTools.convertDateRangeToTermCount(startDateStr, endDateStr));
         self.assignTaModal.taHalfAssignValue(dateTools.convertDateRangeToTermCount(startDateStr, endDateStr) * 0.5);
-        self.assignTaModal.courseTaMax(Math.ceil(+course.studentCount / 50));
+        self.assignTaModal.courseNumOfAssigns(+course.numOfAssigns() || 0);
+        self.assignTaModal.courseMaxAssigns(+course.maxAssigns() || 0);
     };
 
     self.pushTaToCourseList = function (courseId, ta) {
@@ -483,6 +494,19 @@ var CourseViewModel = function () {
         self.courseList().find(isSelectedCourse).taList.remove(isUserTa);
     };
 
+    self.updateCourseAssignFraction = function (courseId, assignType, operation) {
+        var isSelectedCourse = function (course) {
+            return course.courseId === courseId;
+        };
+        var courseToUpdate = self.courseList().find(isSelectedCourse);
+        if (operation.toUpperCase() === 'INCREMENT') {
+            courseToUpdate.numOfAssigns(courseToUpdate.numOfAssigns() + (assignType === 'Full' ? 1 : 0.5));
+        } else {
+            courseToUpdate.numOfAssigns(courseToUpdate.numOfAssigns() - (assignType === 'Full' ? 1 : 0.5));
+        }
+        self.assignTaModal.courseNumOfAssigns(courseToUpdate.numOfAssigns());
+    };
+
     self.assignTaModal.moveTaToAssigned = function (userId) {
         var isUserTa = function (ta) {
             return userId === ta.userId;
@@ -492,6 +516,7 @@ var CourseViewModel = function () {
         self.assignTaModal.unassignedTas.remove(isUserTa);
         self.assignTaModal.assignedTas.push(ta);
         self.pushTaToCourseList(self.assignTaModal.courseId(), ta);
+        self.updateCourseAssignFraction(self.assignTaModal.courseId(), ta.assignType(), 'INCREMENT');
     };
 
     self.assignTaModal.moveTaToUnassigned = function (userId) {
@@ -504,6 +529,7 @@ var CourseViewModel = function () {
         self.assignTaModal.assignedTas.remove(isUserTa);
         self.assignTaModal.unassignedTas.push(ta);
         self.removeTaFromCourse(self.assignTaModal.courseId(), ta);
+        self.updateCourseAssignFraction(self.assignTaModal.courseId(), ta.assignType(), 'DECREMENT');
     };
 
     self.assignTaModal.toggleUnassignedAssignType = function (ta) {
@@ -513,6 +539,7 @@ var CourseViewModel = function () {
     self.assignTaModal.toggleAssignedAssignType = function (ta) {
         ta.assignType(ta.assignType().toUpperCase() === "FULL" ? "Half" : "Full");
         ta.numOfAssigns(ta.numOfAssigns() + (ta.assignType() === 'Full' ? self.assignTaModal.taHalfAssignValue() : -self.assignTaModal.taHalfAssignValue()));
+        self.updateCourseAssignFraction(self.assignTaModal.courseId(), 'Half', ta.assignType() === 'Full' ? 'INCREMENT' : 'DECREMENT');
     };
 
     self.assignTa = function (userId, courseId, assignType, giveWarnings, onSuccess) {
