@@ -276,6 +276,7 @@ var CourseViewModel = function () {
         self.editCourseModal.hasDateError(false);
         self.editCourseModal.hasLab(course.hasLab || false);
         self.editCourseModal.isActive(course.isActive || false);
+        self.editCourseModal.hasCourseCodeError(false);
     };
 
     self.editCourseModal.setStartDateTerm = function (term) {
