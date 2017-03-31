@@ -873,26 +873,6 @@ var CourseViewModel = function () {
         }
     };
 
-    var clearAssignTaModalOrders = function () {
-        self.courseCodeOrder('');
-        self.titleOrder('');
-        self.startDateOrder('');
-        self.endDateOrder('');
-        self.hasLabOrder('');
-        self.isActiveOrder('');
-    };
-
-    self.changeOrder = function (selectedOrder) {
-        var selectedOrder = self[orderDictionary[columnName]]();
-        if (!selectedOrder || selectedOrder === 'DESC') {
-            clearAssignTaModalOrders();
-            self[orderDictionary[columnName]]('ASC');
-        } else {
-            clearAssignTaModalOrders();
-            self[orderDictionary[columnName]]('DESC');
-        }
-    };
-
     /**
      * Filter functions
      */

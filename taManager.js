@@ -99,7 +99,7 @@ var getAssignmentSchedule = function (db) {
 taManager.get('/getAllCourses', function (req, res) {
     db.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
         '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
-            '(SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount"FROM thesis."Course" course ORDER BY "CourseCode" ASC;')
+            '(SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount"FROM thesis."Course" course ORDER BY "IsActive" DESC, "CourseCode" ASC;')
         .then(function (courses) {
             courses = courses.map(function (course) {
                 return formatCourse(course);
