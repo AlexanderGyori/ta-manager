@@ -105,10 +105,10 @@
                     if (this.readyState === 4 && this.status === 200) {
                         var courses = xhttp2.responseText ? JSON.parse(xhttp2.responseText) : [];
                         activeTas.forEach(function (ta, i, activeTas) {
-                            activeTas.courseList = [];
+                            ta.courseList = [];
                             courses.forEach(function (course) {
                                 if (course.userId === ta.userId) {
-                                    activeTas.courseList.push(course);
+                                    ta.courseList.push(course);
                                 }
                             });
                         });
@@ -134,10 +134,10 @@
             };
             taList.forEach(function (ta) {
                 docDefinition.content.push({ text: (ta.lastName || 'n/a') + ', ' + (ta.firstName || 'n/a') + (ta.email ? ' - ' + ta.email : ''), bold: true });
-                docDefinition.content.push({ text: ta.maxAssigns - ta.numOfAssigns + '/' + ta.maxAssigns + ' 140hr assignments' });
+                docDefinition.content.push({ text: ta.numOfAssigns + '/' + ta.maxAssigns + ' 140hr assignments' });
                 var courseListTableContent = [];
                 courseListTableContent.push([{ text: 'Course Code', bold: true }, { text: 'Title', bold: true }, { text: 'Start Term', bold: true }, { text: 'End Term', bold: true }]);
-                taList.courseList.forEach(function (course) {
+                ta.courseList.forEach(function (course) {
                     courseListTableContent.push([course.courseCode || '', course.title, dateTools.convertPgpStringToTermYear(course.startDate) || '', dateTools.convertPgpStringToTermYear(course.endDate) || '']);
                 });
                 docDefinition.content.push({
