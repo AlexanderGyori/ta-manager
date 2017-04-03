@@ -631,7 +631,7 @@ var largestAssignTaToCourse = function (ta, course, assignmentSchedule) {
     var maxAssignTypeForCourse;
     if (largestOverlap === 0 && courseAssignmentsRemaining >= 1) {
         maxAssignTypeForCourse = 'Full';
-    } else if (largestOverlap === 0.5 || courseAssignmentsRemaining === 0.5) {
+    } else if (largestOverlap <= 0.5 && courseAssignmentsRemaining >= 0.5) {
         maxAssignTypeForCourse = 'Half';
     } else {
         maxAssignTypeForCourse = '';
