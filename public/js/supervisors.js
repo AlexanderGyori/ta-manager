@@ -240,6 +240,8 @@ var SupervisorViewModel = function () {
     };
 
     self.setAssignTaModal = function (supervisor) {
+		self.assignTaModal.unassignedTas.removeAll();
+		self.assignTaModal.assignedTas.removeAll();
         self.assignTaModal.loadUnassignedTaList(supervisor.supervisorId);
         self.assignTaModal.assignedTas(supervisor.taList().slice(0));
         self.assignTaModal.searchTerm('');

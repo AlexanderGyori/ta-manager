@@ -456,6 +456,8 @@ var CourseViewModel = function () {
     };
 
     self.setAssignTaModal = function (course) {
+		self.assignTaModal.unassignedTas.removeAll();
+		self.assignTaModal.assignedTas.removeAll();
         self.assignTaModal.loadTaLists(course);
         self.assignTaModal.searchTerm('');
         self.assignTaModal.searchColumn('userId');
