@@ -1,0 +1,173 @@
+/********************************************************
+*
+*           IMPORTANT:
+*           
+*           This script will create a schema called "tamanager" under the "postgres" database.  
+*           
+*           If a different schema name is needed you can CTRL+F replace all "tamanager" with the new name in this file. This change will also need to be reflected in config/databases.js.
+*           The same can be done for the database name "postgres", and this will also need to be changed in config/databases.js.
+*
+********************************************************/
+
+-- SCHEMA: tamanager
+
+-- DROP SCHEMA tamanager ;
+
+CREATE SCHEMA tamanager
+    AUTHORIZATION postgres;
+    
+-- ======================================================
+
+CREATE SEQUENCE tamanager."Course_CourseId_seq"
+    INCREMENT 1
+    START 30
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE tamanager."Course_CourseId_seq"
+    OWNER TO postgres;
+
+-- ===================================================
+
+-- Table: tamanager."Course"
+
+-- DROP TABLE tamanager."Course";
+
+CREATE TABLE tamanager."Course"
+(
+    "CourseId" integer NOT NULL DEFAULT nextval('tamanager."Course_CourseId_seq"'::regclass),
+    "CourseCode" character varying(16) COLLATE pg_catalog."default",
+    "Title" character varying(128) COLLATE pg_catalog."default",
+    "StartDate" date,
+    "EndDate" date,
+    "HasLab" boolean,
+    "IsActive" boolean,
+    "StudentCount" integer,
+    CONSTRAINT "Unique Course Id" PRIMARY KEY ("CourseId")
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE tamanager."Course"
+    OWNER to postgres;
+
+-- ======================================================
+
+CREATE SEQUENCE tamanager."Supervisor_SupervisorId_seq"
+    INCREMENT 1
+    START 4
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE tamanager."Supervisor_SupervisorId_seq"
+    OWNER TO postgres;
+
+-- ============================================================
+
+-- Table: tamanager."Supervisor"
+
+-- DROP TABLE tamanager."Supervisor";
+
+CREATE TABLE tamanager."Supervisor"
+(
+    "SupervisorId" integer NOT NULL DEFAULT nextval('tamanager."Supervisor_SupervisorId_seq"'::regclass),
+    "FirstName" character varying(64) COLLATE pg_catalog."default",
+    "LastName" character varying(64) COLLATE pg_catalog."default",
+    "Email" character varying(64) COLLATE pg_catalog."default",
+    CONSTRAINT "Unique Supervisor Id" PRIMARY KEY ("SupervisorId")
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE tamanager."Supervisor"
+    OWNER to postgres;
+
+-- ============================================================
+
+-- Table: tamanager."TeachingAssistant"
+
+-- DROP TABLE tamanager."TeachingAssistant";
+
+CREATE TABLE tamanager."TeachingAssistant"
+(
+    "UserId" character varying(64) COLLATE pg_catalog."default" NOT NULL,
+    "FirstName" character varying(64) COLLATE pg_catalog."default",
+    "LastName" character varying(64) COLLATE pg_catalog."default",
+    "Email" character varying(64) COLLATE pg_catalog."default",
+    "StudentNumber" bigint,
+    "StudentType" character varying(16) COLLATE pg_catalog."default",
+    "IsActive" boolean,
+    CONSTRAINT "TeachingAssistant_pkey" PRIMARY KEY ("UserId"),
+    CONSTRAINT "Unique User Id and Student Number" UNIQUE ("StudentNumber", "UserId")
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE tamanager."TeachingAssistant"
+    OWNER to postgres;
+
+-- ===================================================================
+
+-- Table: tamanager."CourseTaAssigns"
+
+-- DROP TABLE tamanager."CourseTaAssigns";
+
+CREATE TABLE tamanager."CourseTaAssigns"
+(
+    "UserId" character varying(64) COLLATE pg_catalog."default" NOT NULL,
+    "CourseId" integer NOT NULL,
+    "AssignType" character varying(16) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT "Unique UserId/CouseId Combo" UNIQUE ("CourseId", "UserId"),
+    CONSTRAINT "CourseId" FOREIGN KEY ("CourseId")
+        REFERENCES tamanager."Course" ("CourseId") MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT "UserId" FOREIGN KEY ("UserId")
+        REFERENCES tamanager."TeachingAssistant" ("UserId") MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE tamanager."CourseTaAssigns"
+    OWNER to postgres;
+
+-- =======================================================================
+
+-- Table: tamanager."SupervisorTaAssigns"
+
+-- DROP TABLE tamanager."SupervisorTaAssigns";
+
+CREATE TABLE tamanager."SupervisorTaAssigns"
+(
+    "UserId" character varying COLLATE pg_catalog."default",
+    "SupervisorId" integer,
+    CONSTRAINT "Unique UserId/SupervisorId Combo" UNIQUE ("SupervisorId", "UserId"),
+    CONSTRAINT "SupervisorId" FOREIGN KEY ("SupervisorId")
+        REFERENCES tamanager."Supervisor" ("SupervisorId") MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT "UserId" FOREIGN KEY ("UserId")
+        REFERENCES tamanager."TeachingAssistant" ("UserId") MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE tamanager."SupervisorTaAssigns"
+    OWNER to postgres;
+
