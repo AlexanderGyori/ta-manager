@@ -8,6 +8,7 @@ var session = require('express-session');
 var dateTools = require('./public/js/date-tools.js');
 var db = pgp(configDb.url);
 var schema = configDb.schema;
+var PORT = 8080;
 
 
 
@@ -47,12 +48,6 @@ taManager.use(express.static(__dirname + '/public'));
 taManager.use(session({ secret: 'a secret', resave: false, saveUninitialized: false }));
 taManager.use(passport.initialize());
 taManager.use(passport.session());
-
-// Now we can use
-// POST: name=foo&color=red            <-- URL encoding
-// and
-// POST: {"name":"foo","color":"red"}  <-- JSON encoding
-// req.body.name for both
 
 // =========================================== AUTHENTICATION TEST ROUTES ==============================
 taManager.get('/loginFail', function (req, res) {
@@ -838,6 +833,6 @@ taManager.post('/updateCourseTaAssignment', function (req, res) {
 });
 
 // Listen on 8080
-taManager.listen(8080, function () {
-    console.log('TA Manager listening on port 8080');
+taManager.listen(PORT, function () {
+    console.log('TA Manager listening on port ' + PORT);
 });
