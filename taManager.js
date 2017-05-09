@@ -6,7 +6,8 @@ var passport = require('passport');
 var Strategy = require('passport-local').Strategy;
 var session = require('express-session');
 var dateTools = require('./public/js/date-tools.js');
-var db = pgp(configDb.url); 
+var db = pgp(configDb.url);
+var schema = configDb.schema;
 
 
 
@@ -80,7 +81,7 @@ taManager.get('/profile',
 // =========================================== GENERIC CALLS ==========================================
 
 var assignTa = function (res, db, userId, courseId, assignType) {
-    return db.query('INSERT INTO thesis."CourseTaAssigns"("UserId", "CourseId", "AssignType") VALUES ($1, $2, $3);', [userId, courseId, assignType])
+    return db.query('INSERT INTO ' + schema + '."CourseTaAssigns"("UserId", "CourseId", "AssignType") VALUES ($1, $2, $3);', [userId, courseId, assignType])
         .then(function (data) {
             res.send();
         })
@@ -92,14 +93,14 @@ var assignTa = function (res, db, userId, courseId, assignType) {
 
 var getAssignmentSchedule = function (db) {
     return db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "UserId" AS "userId", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-        '"AssignType" AS "assignType" FROM thesis."Course" course JOIN thesis."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL;');
+        '"AssignType" AS "assignType" FROM ' + schema + '."Course" course JOIN ' + schema + '."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL;');
 };
 
 // =========================================== COURSES PAGE ===========================================
 taManager.get('/getAllCourses', function (req, res) {
     db.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-        '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
-            '(SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount"FROM thesis."Course" course ORDER BY "IsActive" DESC, "CourseCode" ASC;')
+        '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
+            '(SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount"FROM ' + schema + '."Course" course ORDER BY "IsActive" DESC, "CourseCode" ASC;')
         .then(function (courses) {
             courses = courses.map(function (course) {
                 return formatCourse(course);
@@ -114,7 +115,7 @@ taManager.get('/getAllCourses', function (req, res) {
 taManager.get('/getCourse', function (req, res) {
     var courseId = req.query.courseId;
     db.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-        '"HasLab" AS "hasLab", "IsActive" AS "isActive" FROM thesis."Course" WHERE "CourseId" = $1', [courseId])
+        '"HasLab" AS "hasLab", "IsActive" AS "isActive" FROM ' + schema + '."Course" WHERE "CourseId" = $1', [courseId])
     .then(function (course) {
         res.send(course);
     })
@@ -134,7 +135,7 @@ taManager.post('/addCourse', function (req, res) {
             message: 'Course is invalid.'
         });
     } else {
-        db.query('INSERT INTO thesis."Course"("CourseCode", "Title", "StudentCount", "StartDate", "EndDate", "HasLab", "IsActive") ' +
+        db.query('INSERT INTO ' + schema + '."Course"("CourseCode", "Title", "StudentCount", "StartDate", "EndDate", "HasLab", "IsActive") ' +
         'VALUES ($1, $2, $3, $4, $5, $6, $7);', [course.courseCode, course.title, course.studentCount, course.startDate, course.endDate, course.hasLab, course.isActive]) 
         .then(function (data) {
             res.send();
@@ -156,7 +157,7 @@ taManager.post('/editCourse', function (req, res) {
             message: 'Course is invalid.'
         });
     } else {
-        db.query('UPDATE thesis."Course" SET "CourseCode" = $1, "Title" = $2, "StudentCount" = $3, "StartDate" = $4, "EndDate" = $5, "HasLab" = $6, "IsActive" = $7 WHERE "CourseId" = $8',
+        db.query('UPDATE ' + schema + '."Course" SET "CourseCode" = $1, "Title" = $2, "StudentCount" = $3, "StartDate" = $4, "EndDate" = $5, "HasLab" = $6, "IsActive" = $7 WHERE "CourseId" = $8',
         [course.courseCode, course.title, course.studentCount, course.startDate, course.endDate, course.hasLab, course.isActive, course.courseId])
         .then(function (data) {
             res.send();
@@ -170,9 +171,9 @@ taManager.post('/editCourse', function (req, res) {
 taManager.post('/removeCourse', function (req, res) {
     var course = req.body;
     db.task(function (t) {
-        return t.query('DELETE FROM thesis."CourseTaAssigns" WHERE "CourseId" = $1', course.courseId)
+        return t.query('DELETE FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = $1', course.courseId)
             .then(function () {
-                return t.query('DELETE FROM thesis."Course" WHERE "CourseId" = $1', course.courseId);
+                return t.query('DELETE FROM ' + schema + '."Course" WHERE "CourseId" = $1', course.courseId);
             });
         })
         .then(function (data) {
@@ -187,8 +188,8 @@ taManager.get('/getAllTasForCourse', function (req, res) {
     var courseId = req.query.courseId;
     db.task(t => {
         return t.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ' +
-        'ta."StudentType" AS "studentType", assign."AssignType" AS "assignType", ta."IsActive" as "isActive" FROM thesis."CourseTaAssigns" assign ' +
-        'INNER JOIN thesis."TeachingAssistant" ta ON assign."UserId" = ta."UserId" WHERE assign."CourseId" = $1 GROUP BY ta."UserId", assign."AssignType" ORDER BY ta."LastName" ASC', [courseId])
+        'ta."StudentType" AS "studentType", assign."AssignType" AS "assignType", ta."IsActive" as "isActive" FROM ' + schema + '."CourseTaAssigns" assign ' +
+        'INNER JOIN ' + schema + '."TeachingAssistant" ta ON assign."UserId" = ta."UserId" WHERE assign."CourseId" = $1 GROUP BY ta."UserId", assign."AssignType" ORDER BY ta."LastName" ASC', [courseId])
         .then(tas => {
             return getAssignmentSchedule(t)
             .then(assignmentSchedule => {
@@ -207,11 +208,11 @@ taManager.get('/getAllTasForCourse', function (req, res) {
 taManager.get('/getAllPreviousTasForCourse', function (req, res) {
     var courseId = req.query.courseId;
     db.task(t => {
-        return t.query('SELECT "CourseCode" from thesis."Course" where "CourseId" = $1', [courseId])
+        return t.query('SELECT "CourseCode" from ' + schema + '."Course" where "CourseId" = $1', [courseId])
         .then(course => {
             return t.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ' + 
-            'ta."StudentType" AS "studentType", assign."AssignType" AS "assignType" FROM thesis."CourseTaAssigns" assign INNER JOIN thesis."TeachingAssistant" ta ON assign."UserId" = ta."UserId" ' +
-            'JOIN thesis."Course" course ON course."CourseId" = assign."CourseId"' + 
+            'ta."StudentType" AS "studentType", assign."AssignType" AS "assignType" FROM ' + schema + '."CourseTaAssigns" assign INNER JOIN ' + schema + '."TeachingAssistant" ta ON assign."UserId" = ta."UserId" ' +
+            'JOIN ' + schema + '."Course" course ON course."CourseId" = assign."CourseId"' + 
             'WHERE course."CourseCode" = $1 AND assign."CourseId" != $2 GROUP BY ta."UserId", assign."AssignType" ORDER BY ta."LastName" ASC', [course[0].CourseCode, courseId])
             .then(taList => {
                 res.send(taList);
@@ -227,7 +228,7 @@ taManager.get('/getUnassignedTasForCourse', function (req, res) {
     var courseId = req.query.courseId;
     db.task(t => {
         return t.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentType" AS "studentType", ta."StudentNumber" as "studentNumber", ta."IsActive" as "isActive" ' +
-        'FROM thesis."TeachingAssistant" ta LEFT OUTER JOIN (SELECT * FROM thesis."CourseTaAssigns" WHERE "CourseId" = $1) assign ' +
+        'FROM ' + schema + '."TeachingAssistant" ta LEFT OUTER JOIN (SELECT * FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = $1) assign ' +
         'ON ta."UserId" = assign."UserId" ' +
         'WHERE assign."UserId" is null ' +
         'GROUP BY ta."UserId" ' +
@@ -260,10 +261,10 @@ taManager.get('/getCourseTaAssignsBetweenDates', function (req, res) {
 
     db.task(t => {
         return t.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' + 
-            '"HasLab" AS "hasLab", "IsActive" AS "isActive" FROM thesis."Course" WHERE "IsActive" = true ')
+            '"HasLab" AS "hasLab", "IsActive" AS "isActive" FROM ' + schema + '."Course" WHERE "IsActive" = true ')
         .then(activeCourses => {
             return t.query('SELECT assign."CourseId" AS "assignedCourseId", ta."UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' +
-            'ta."IsActive" AS "isActive" FROM thesis."TeachingAssistant" ta JOIN thesis."CourseTaAssigns" assign ON ta."UserId" = assign."UserId" JOIN thesis."Course" course ON course."CourseId" = ' + 
+            'ta."IsActive" AS "isActive" FROM ' + schema + '."TeachingAssistant" ta JOIN ' + schema + '."CourseTaAssigns" assign ON ta."UserId" = assign."UserId" JOIN ' + schema + '."Course" course ON course."CourseId" = ' + 
             'assign."CourseId" WHERE course."IsActive" = true')
             .then(tasToActiveCourses => {
                 activeCourses = activeCourses.map(function (course) {
@@ -289,7 +290,7 @@ taManager.get('/getCourseTaAssignsBetweenDates', function (req, res) {
 
 taManager.get('/getPreviouslyTaughtForCourse', function (req, res) {
     var courseCode = req.query.courseCode;
-    db.query('SELECT assign."UserId" AS "userId" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ON assign."CourseId" = course."CourseId" ' +
+    db.query('SELECT assign."UserId" AS "userId" FROM ' + schema + '."CourseTaAssigns" assign JOIN ' + schema + '."Course" course ON assign."CourseId" = course."CourseId" ' +
     'WHERE course."CourseCode" = $1 GROUP BY assign."UserId" ;', [courseCode])
     .then(function (data) {
         res.send(data);
@@ -323,7 +324,7 @@ var sanitizeTa = function (ta) {
 taManager.get('/getAllTas', function (req, res) {
     db.task(t => {
         return db.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' +
-        '"IsActive" AS "isActive" FROM thesis."TeachingAssistant" ORDER BY "UserId" ASC;')
+        '"IsActive" AS "isActive" FROM ' + schema + '."TeachingAssistant" ORDER BY "UserId" ASC;')
         .then(tas => {
             return getAssignmentSchedule(t)
             .then(assignmentSchedule => {
@@ -342,7 +343,7 @@ taManager.get('/getAllTas', function (req, res) {
 taManager.get('/getTa', function (req, res) {
     var userId = req.query.userId;
     db.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' + 
-        '"IsActive" AS "isActive" FROM thesis."TeachingAssistant" WHERE "UserId" = $1', [userId])
+        '"IsActive" AS "isActive" FROM ' + schema + '."TeachingAssistant" WHERE "UserId" = $1', [userId])
     .then(function (ta) {
         res.send(ta);
     })
@@ -354,7 +355,7 @@ taManager.get('/getTa', function (req, res) {
 taManager.post('/addTa', function (req, res) {
     var ta = req.body;
     ta = sanitizeTa(ta);
-    db.query('INSERT INTO thesis."TeachingAssistant"("UserId", "StudentNumber", "FirstName", "LastName", "Email", "StudentType", "IsActive") ' +
+    db.query('INSERT INTO ' + schema + '."TeachingAssistant"("UserId", "StudentNumber", "FirstName", "LastName", "Email", "StudentType", "IsActive") ' +
         'VALUES ($1, $2, $3, $4, $5, $6, $7);', [ta.userId, ta.studentNumber, ta.firstName, ta.lastName, ta.email, ta.studentType, ta.isActive])
         .then(function (data) {
             res.send();
@@ -367,7 +368,7 @@ taManager.post('/addTa', function (req, res) {
 taManager.post('/editTa', function (req, res) {
     var ta = req.body;
     ta = sanitizeTa(ta);
-    db.query('UPDATE thesis."TeachingAssistant" SET "StudentNumber" = $1, "FirstName" = $2, "LastName" = $3, "Email" = $4, "StudentType" = $5, "IsActive" = $6 WHERE "UserId" = $7',
+    db.query('UPDATE ' + schema + '."TeachingAssistant" SET "StudentNumber" = $1, "FirstName" = $2, "LastName" = $3, "Email" = $4, "StudentType" = $5, "IsActive" = $6 WHERE "UserId" = $7',
         [ta.studentNumber, ta.firstName, ta.lastName, ta.email, ta.studentType, ta.isActive, ta.userId])
         .then(function (data) {
             res.send();
@@ -380,11 +381,11 @@ taManager.post('/editTa', function (req, res) {
 taManager.post('/removeTa', function (req, res) {
     var ta = req.body;
     db.task(function (t) {
-        return t.query('DELETE FROM thesis."CourseTaAssigns" WHERE "UserId" = $1', ta.userId)
+        return t.query('DELETE FROM ' + schema + '."CourseTaAssigns" WHERE "UserId" = $1', ta.userId)
             .then(function () {
-                return t.query('DELETE FROM thesis."SupervisorTaAssigns" WHERE "UserId" = $1', ta.userId)
+                return t.query('DELETE FROM ' + schema + '."SupervisorTaAssigns" WHERE "UserId" = $1', ta.userId)
                     .then(function () {
-                        return t.query('DELETE FROM thesis."TeachingAssistant" WHERE "UserId" = $1', ta.userId);
+                        return t.query('DELETE FROM ' + schema + '."TeachingAssistant" WHERE "UserId" = $1', ta.userId);
                     });
             });
     })
@@ -399,10 +400,10 @@ taManager.post('/removeTa', function (req, res) {
 taManager.get('/getAllActiveTas', function (req, res) {
     db.task(t => {
         return t.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' +
-        '"IsActive" AS "isActive" FROM thesis."TeachingAssistant" WHERE "IsActive" = true ORDER BY "UserId" ASC;')
+        '"IsActive" AS "isActive" FROM ' + schema + '."TeachingAssistant" WHERE "IsActive" = true ORDER BY "UserId" ASC;')
         .then(activeTas => {
             return t.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "UserId" AS "userId", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-            '"AssignType" AS "assignType" FROM thesis."Course" course JOIN thesis."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" ' + 
+            '"AssignType" AS "assignType" FROM ' + schema + '."Course" course JOIN ' + schema + '."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" ' + 
             'WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL;')
             .then(assignmentSchedule => {
                 activeTas = activeTas.map(function (ta) {
@@ -419,8 +420,8 @@ taManager.get('/getAllActiveTas', function (req, res) {
 
 taManager.get('/getAllCoursesForAllActiveTas', function (req, res) {
     db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-        '"HasLab" AS "hasLab", course."IsActive" AS "isActive", ta."UserId" as "userId" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ON assign."CourseId" = course."CourseId" ' +
-        'JOIN thesis."TeachingAssistant" ta ON ta."UserId" = assign."UserId" WHERE ta."IsActive" = true ORDER BY course."CourseCode" ASC;')
+        '"HasLab" AS "hasLab", course."IsActive" AS "isActive", ta."UserId" as "userId" FROM ' + schema + '."CourseTaAssigns" assign JOIN ' + schema + '."Course" course ON assign."CourseId" = course."CourseId" ' +
+        'JOIN ' + schema + '."TeachingAssistant" ta ON ta."UserId" = assign."UserId" WHERE ta."IsActive" = true ORDER BY course."CourseCode" ASC;')
     .then(function (courses) {
         res.send(courses);
     })
@@ -432,7 +433,7 @@ taManager.get('/getAllCoursesForAllActiveTas', function (req, res) {
 taManager.get('/getAllCoursesForTa', function (req, res) {
     var userId = req.query.userId;
     db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-        '"HasLab" AS "hasLab", "IsActive" AS "isActive", assign."AssignType" as "assignType" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ' + 
+        '"HasLab" AS "hasLab", "IsActive" AS "isActive", assign."AssignType" as "assignType" FROM ' + schema + '."CourseTaAssigns" assign JOIN ' + schema + '."Course" course ' + 
         'ON assign."CourseId" = course."CourseId" WHERE assign."UserId" = $1 ORDER BY course."CourseCode" ASC;', [userId])
     .then(function (courses) {
         res.send(courses);
@@ -445,7 +446,7 @@ taManager.get('/getAllCoursesForTa', function (req, res) {
 taManager.get('/getAllSupervisorsForTa', function (req, res) {
     var userId = req.query.userId;
     db.query('SELECT supervisor."SupervisorId" AS "supervisorId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email" ' +
-        'FROM thesis."SupervisorTaAssigns" assign JOIN thesis."Supervisor" supervisor ON assign."SupervisorId" = supervisor."SupervisorId" WHERE assign."UserId" = $1 ' +
+        'FROM ' + schema + '."SupervisorTaAssigns" assign JOIN ' + schema + '."Supervisor" supervisor ON assign."SupervisorId" = supervisor."SupervisorId" WHERE assign."UserId" = $1 ' +
         'ORDER BY supervisor."LastName" ASC;', [userId])
     .then(function (supervisors) {
         res.send(supervisors);
@@ -458,7 +459,7 @@ taManager.get('/getAllSupervisorsForTa', function (req, res) {
 // =========================================== SUPERVISORS PAGE ===========================================
 
 taManager.get('/getAllSupervisors', function (req, res) {
-    db.query('SELECT "SupervisorId" AS "supervisorId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email" FROM thesis."Supervisor" ORDER BY "LastName" ASC;')
+    db.query('SELECT "SupervisorId" AS "supervisorId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email" FROM ' + schema + '."Supervisor" ORDER BY "LastName" ASC;')
         .then(function (data) {
             res.send(data);
         })
@@ -469,7 +470,7 @@ taManager.get('/getAllSupervisors', function (req, res) {
 
 taManager.post('/addSupervisor', function (req, res) {
     var supervisor = req.body;
-    db.query('INSERT INTO thesis."Supervisor"("FirstName", "LastName", "Email") ' +
+    db.query('INSERT INTO ' + schema + '."Supervisor"("FirstName", "LastName", "Email") ' +
         'VALUES ($1, $2, $3);', [supervisor.firstName, supervisor.lastName, supervisor.email])
         .then(function (data) {
             res.send();
@@ -481,7 +482,7 @@ taManager.post('/addSupervisor', function (req, res) {
 
 taManager.post('/editSupervisor', function (req, res) {
     var supervisor = req.body;
-    db.query('UPDATE thesis."Supervisor" SET "FirstName" = $1, "LastName" = $2, "Email" = $3 WHERE "SupervisorId" = $4',
+    db.query('UPDATE ' + schema + '."Supervisor" SET "FirstName" = $1, "LastName" = $2, "Email" = $3 WHERE "SupervisorId" = $4',
         [supervisor.firstName, supervisor.lastName, supervisor.email, supervisor.supervisorId])
         .then(function (data) {
             res.send();
@@ -494,9 +495,9 @@ taManager.post('/editSupervisor', function (req, res) {
 taManager.post('/removeSupervisor', function (req, res) {
     var supervisor = req.body;
     db.task(function (t) {
-        return t.query('DELETE FROM thesis."SupervisorTaAssigns" WHERE "SupervisorId" = $1', supervisor.supervisorId)
+        return t.query('DELETE FROM ' + schema + '."SupervisorTaAssigns" WHERE "SupervisorId" = $1', supervisor.supervisorId)
             .then(function () {
-                return t.query('DELETE FROM thesis."Supervisor" WHERE "SupervisorId" = $1', supervisor.supervisorId);
+                return t.query('DELETE FROM ' + schema + '."Supervisor" WHERE "SupervisorId" = $1', supervisor.supervisorId);
             });
     })
         .then(function (data) {
@@ -510,7 +511,7 @@ taManager.post('/removeSupervisor', function (req, res) {
 taManager.get('/getAllTasForSupervisor', function (req, res) {
     var supervisorId = req.query.supervisorId;
     db.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ta."StudentType" AS "studentType", ' +
-        'ta."IsActive" AS "isActive" FROM thesis."SupervisorTaAssigns" supervisor INNER JOIN thesis."TeachingAssistant" ta ON supervisor."UserId" = ta."UserId" WHERE supervisor."SupervisorId" = $1 GROUP BY ta."UserId" ORDER BY ta."LastName" ASC', [supervisorId])
+        'ta."IsActive" AS "isActive" FROM ' + schema + '."SupervisorTaAssigns" supervisor INNER JOIN ' + schema + '."TeachingAssistant" ta ON supervisor."UserId" = ta."UserId" WHERE supervisor."SupervisorId" = $1 GROUP BY ta."UserId" ORDER BY ta."LastName" ASC', [supervisorId])
         .then(function (data) {
             res.send(data);
         })
@@ -522,7 +523,7 @@ taManager.get('/getAllTasForSupervisor', function (req, res) {
 taManager.get('/getUnassignedTasForSupervisor', function (req, res) {
     var supervisorId = req.query.supervisorId;
     db.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" as "studentNumber" ' +
-        'FROM thesis."TeachingAssistant" ta LEFT OUTER JOIN (SELECT * FROM thesis."SupervisorTaAssigns" WHERE "SupervisorId" = $1) supervisor ' +
+        'FROM ' + schema + '."TeachingAssistant" ta LEFT OUTER JOIN (SELECT * FROM ' + schema + '."SupervisorTaAssigns" WHERE "SupervisorId" = $1) supervisor ' +
         'ON ta."UserId" = supervisor."UserId" ' +
         'WHERE supervisor."UserId" is null ' +
         'GROUP BY ta."UserId" ' +
@@ -648,19 +649,19 @@ var largestAssignTaToCourse = function (ta, course, assignmentSchedule) {
 taManager.post('/autoAssignTas', function (req, res) {
     db.task(t => {
         return t.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-            '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
-            '(SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount" FROM thesis."Course" course WHERE "IsActive" = true;')
+            '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
+            '(SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount" FROM ' + schema + '."Course" course WHERE "IsActive" = true;')
             .then(activeCourses => {
                 return t.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", ' +
-                    '"StudentType" AS "studentType" FROM thesis."TeachingAssistant" WHERE "IsActive" = true;')
+                    '"StudentType" AS "studentType" FROM ' + schema + '."TeachingAssistant" WHERE "IsActive" = true;')
                     .then(activeTas => {
-                        return t.query('SELECT assign."UserId" AS "userId", course."CourseCode" AS "courseCode" FROM thesis."CourseTaAssigns" assign JOIN thesis."Course" course ON assign."CourseId" = course."CourseId" ' +
-                            'INNER JOIN (SELECT * FROM thesis."Course" WHERE "IsActive" = true) activeCourses ON activeCourses."CourseCode" = course."CourseCode" ' +
+                        return t.query('SELECT assign."UserId" AS "userId", course."CourseCode" AS "courseCode" FROM ' + schema + '."CourseTaAssigns" assign JOIN ' + schema + '."Course" course ON assign."CourseId" = course."CourseId" ' +
+                            'INNER JOIN (SELECT * FROM ' + schema + '."Course" WHERE "IsActive" = true) activeCourses ON activeCourses."CourseCode" = course."CourseCode" ' +
                             'GROUP BY assign."UserId", course."CourseCode" ORDER BY course."CourseCode";')
                             .then(previouslyTaught => {
                                 return t.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "UserId" AS "userId", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-                                    '"AssignType" AS "assignType" FROM thesis."Course" course ' +
-                                    'JOIN thesis."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL;')
+                                    '"AssignType" AS "assignType" FROM ' + schema + '."Course" course ' +
+                                    'JOIN ' + schema + '."CourseTaAssigns" assign ON course."CourseId" = assign."CourseId" WHERE "StartDate" IS NOT NULL AND "EndDate" IS NOT NULL;')
                                     .then(assignmentSchedule => {
                                         // Format data for processing, define return object.
                                         var autoAssignments = [];
@@ -756,11 +757,11 @@ taManager.post('/assignTaToCourse', function (req, res) {
     if (giveWarnings.toUpperCase() === "TRUE") {
         db.task(t => {
             return t.one('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType" ' + 
-                'FROM thesis."TeachingAssistant" WHERE "UserId" = $1;', [userId])
+                'FROM ' + schema + '."TeachingAssistant" WHERE "UserId" = $1;', [userId])
             .then(ta => {
                 return t.one('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
-                    '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
-                    '(SELECT count(*) FROM thesis."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount" FROM thesis."Course" course WHERE "CourseId" = $1;', [courseId])
+                    '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
+                    '(SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount" FROM ' + schema + '."Course" course WHERE "CourseId" = $1;', [courseId])
                 .then(course => {
                     return getAssignmentSchedule(t)
                     .then(assignmentSchedule => {
@@ -793,7 +794,7 @@ taManager.post('/assignTaToCourse', function (req, res) {
 
 taManager.post('/unassignTaToCourse', function (req, res) {
     var assign = req.body;
-    db.query('DELETE FROM thesis."CourseTaAssigns" WHERE "UserId" = $1 AND "CourseId" = $2', [assign.userId, assign.courseId])
+    db.query('DELETE FROM ' + schema + '."CourseTaAssigns" WHERE "UserId" = $1 AND "CourseId" = $2', [assign.userId, assign.courseId])
         .then(function (data) {
             res.send();
         })
@@ -804,7 +805,7 @@ taManager.post('/unassignTaToCourse', function (req, res) {
 
 taManager.post('/assignTaToSupervisor', function (req, res) {
     var assign = req.body;
-    db.query('INSERT INTO thesis."SupervisorTaAssigns"("UserId", "SupervisorId") ' +
+    db.query('INSERT INTO ' + schema + '."SupervisorTaAssigns"("UserId", "SupervisorId") ' +
         'VALUES ($1, $2);', [assign.userId, assign.supervisorId])
         .then(function (data) {
             res.send();
@@ -816,7 +817,7 @@ taManager.post('/assignTaToSupervisor', function (req, res) {
 
 taManager.post('/unassignTaToSupervisor', function (req, res) {
     var assign = req.body;
-    db.query('DELETE FROM thesis."SupervisorTaAssigns" WHERE "UserId" = $1 AND "SupervisorId" = $2', [assign.userId, assign.supervisorId])
+    db.query('DELETE FROM ' + schema + '."SupervisorTaAssigns" WHERE "UserId" = $1 AND "SupervisorId" = $2', [assign.userId, assign.supervisorId])
         .then(function (data) {
             res.send();
         })
@@ -827,7 +828,7 @@ taManager.post('/unassignTaToSupervisor', function (req, res) {
 
 taManager.post('/updateCourseTaAssignment', function (req, res) {
     var assign = req.body;
-    db.query('UPDATE thesis."CourseTaAssigns" SET "AssignType" = $1 WHERE "UserId" = $2 AND "CourseId" = $3', [assign.assignType, assign.userId, assign.courseId])
+    db.query('UPDATE ' + schema + '."CourseTaAssigns" SET "AssignType" = $1 WHERE "UserId" = $2 AND "CourseId" = $3', [assign.assignType, assign.userId, assign.courseId])
         .then(function (data) {
             res.send();
         })
