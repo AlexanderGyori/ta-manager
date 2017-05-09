@@ -6,6 +6,7 @@ var passport = require('passport');
 var Strategy = require('passport-local').Strategy;
 var session = require('express-session');
 var dateTools = require('./public/js/date-tools.js');
+var connectEnsureLogin = require('connect-ensure-login');
 var db = pgp(configDb.url);
 var schema = configDb.schema;
 var PORT = 8080;
@@ -67,7 +68,7 @@ taManager.get('/logout', function (req, res) {
 });
 
 taManager.get('/profile',
-    require('connect-ensure-login').ensureLoggedIn('/loginFail'),
+    connectEnsureLogin.ensureLoggedIn('/loginFail'),
     function (req, res) {
         res.send({ message: 'Viewing profile!' });
     }
@@ -92,7 +93,7 @@ var getAssignmentSchedule = function (db) {
 };
 
 // =========================================== COURSES PAGE ===========================================
-taManager.get('/getAllCourses', function (req, res) {
+taManager.get('/getAllCourses', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     db.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
         '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
             '(SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Full\') AS "fullAssignCount"FROM ' + schema + '."Course" course ORDER BY "IsActive" DESC, "CourseCode" ASC;')
@@ -107,7 +108,7 @@ taManager.get('/getAllCourses', function (req, res) {
         });
 });
 
-taManager.get('/getCourse', function (req, res) {
+taManager.get('/getCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var courseId = req.query.courseId;
     db.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
         '"HasLab" AS "hasLab", "IsActive" AS "isActive" FROM ' + schema + '."Course" WHERE "CourseId" = $1', [courseId])
@@ -119,7 +120,7 @@ taManager.get('/getCourse', function (req, res) {
     });
 });
 
-taManager.post('/addCourse', function (req, res) {
+taManager.post('/addCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var course = req.body;
     course.studentCount = (!course.studentCount ? null : course.studentCount);
     course.startDate = (!course.startDate ? null : course.startDate);
@@ -141,7 +142,7 @@ taManager.post('/addCourse', function (req, res) {
     }
 });
 
-taManager.post('/editCourse', function (req, res) {
+taManager.post('/editCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var course = req.body;
     course.studentCount = (!course.studentCount ? null : course.studentCount);
     course.startDate = (!course.startDate ? null : course.startDate);
@@ -163,7 +164,7 @@ taManager.post('/editCourse', function (req, res) {
     }
 });
 
-taManager.post('/removeCourse', function (req, res) {
+taManager.post('/removeCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var course = req.body;
     db.task(function (t) {
         return t.query('DELETE FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = $1', course.courseId)
@@ -179,7 +180,7 @@ taManager.post('/removeCourse', function (req, res) {
         });
 });
 
-taManager.get('/getAllTasForCourse', function (req, res) {
+taManager.get('/getAllTasForCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var courseId = req.query.courseId;
     db.task(t => {
         return t.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ' +
@@ -200,7 +201,7 @@ taManager.get('/getAllTasForCourse', function (req, res) {
     });
 });
 
-taManager.get('/getAllPreviousTasForCourse', function (req, res) {
+taManager.get('/getAllPreviousTasForCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var courseId = req.query.courseId;
     db.task(t => {
         return t.query('SELECT "CourseCode" from ' + schema + '."Course" where "CourseId" = $1', [courseId])
@@ -219,7 +220,7 @@ taManager.get('/getAllPreviousTasForCourse', function (req, res) {
     });
 });
 
-taManager.get('/getUnassignedTasForCourse', function (req, res) {
+taManager.get('/getUnassignedTasForCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var courseId = req.query.courseId;
     db.task(t => {
         return t.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentType" AS "studentType", ta."StudentNumber" as "studentNumber", ta."IsActive" as "isActive" ' +
@@ -244,7 +245,7 @@ taManager.get('/getUnassignedTasForCourse', function (req, res) {
         });
 });
 
-taManager.get('/getCourseTaAssignsBetweenDates', function (req, res) {
+taManager.get('/getCourseTaAssignsBetweenDates', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var startDate = {
         term: req.query.startDateTerm,
         year: req.query.startDateYear
@@ -283,7 +284,7 @@ taManager.get('/getCourseTaAssignsBetweenDates', function (req, res) {
     });
 });
 
-taManager.get('/getPreviouslyTaughtForCourse', function (req, res) {
+taManager.get('/getPreviouslyTaughtForCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var courseCode = req.query.courseCode;
     db.query('SELECT assign."UserId" AS "userId" FROM ' + schema + '."CourseTaAssigns" assign JOIN ' + schema + '."Course" course ON assign."CourseId" = course."CourseId" ' +
     'WHERE course."CourseCode" = $1 GROUP BY assign."UserId" ;', [courseCode])
@@ -316,7 +317,7 @@ var sanitizeTa = function (ta) {
     return ta;
 };
 
-taManager.get('/getAllTas', function (req, res) {
+taManager.get('/getAllTas', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     db.task(t => {
         return db.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' +
         '"IsActive" AS "isActive" FROM ' + schema + '."TeachingAssistant" ORDER BY "UserId" ASC;')
@@ -335,7 +336,7 @@ taManager.get('/getAllTas', function (req, res) {
     });
 });
 
-taManager.get('/getTa', function (req, res) {
+taManager.get('/getTa', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var userId = req.query.userId;
     db.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' + 
         '"IsActive" AS "isActive" FROM ' + schema + '."TeachingAssistant" WHERE "UserId" = $1', [userId])
@@ -347,7 +348,7 @@ taManager.get('/getTa', function (req, res) {
     });
 });
 
-taManager.post('/addTa', function (req, res) {
+taManager.post('/addTa', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var ta = req.body;
     ta = sanitizeTa(ta);
     db.query('INSERT INTO ' + schema + '."TeachingAssistant"("UserId", "StudentNumber", "FirstName", "LastName", "Email", "StudentType", "IsActive") ' +
@@ -360,7 +361,7 @@ taManager.post('/addTa', function (req, res) {
         });
 });
 
-taManager.post('/editTa', function (req, res) {
+taManager.post('/editTa', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var ta = req.body;
     ta = sanitizeTa(ta);
     db.query('UPDATE ' + schema + '."TeachingAssistant" SET "StudentNumber" = $1, "FirstName" = $2, "LastName" = $3, "Email" = $4, "StudentType" = $5, "IsActive" = $6 WHERE "UserId" = $7',
@@ -373,7 +374,7 @@ taManager.post('/editTa', function (req, res) {
         });
 });
 
-taManager.post('/removeTa', function (req, res) {
+taManager.post('/removeTa', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var ta = req.body;
     db.task(function (t) {
         return t.query('DELETE FROM ' + schema + '."CourseTaAssigns" WHERE "UserId" = $1', ta.userId)
@@ -392,7 +393,7 @@ taManager.post('/removeTa', function (req, res) {
         });
 });
 
-taManager.get('/getAllActiveTas', function (req, res) {
+taManager.get('/getAllActiveTas', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     db.task(t => {
         return t.query('SELECT "UserId" AS "userId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email", "StudentNumber" AS "studentNumber", "StudentType" AS "studentType", ' +
         '"IsActive" AS "isActive" FROM ' + schema + '."TeachingAssistant" WHERE "IsActive" = true ORDER BY "UserId" ASC;')
@@ -413,7 +414,7 @@ taManager.get('/getAllActiveTas', function (req, res) {
     });
 });
 
-taManager.get('/getAllCoursesForAllActiveTas', function (req, res) {
+taManager.get('/getAllCoursesForAllActiveTas', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
         '"HasLab" AS "hasLab", course."IsActive" AS "isActive", ta."UserId" as "userId" FROM ' + schema + '."CourseTaAssigns" assign JOIN ' + schema + '."Course" course ON assign."CourseId" = course."CourseId" ' +
         'JOIN ' + schema + '."TeachingAssistant" ta ON ta."UserId" = assign."UserId" WHERE ta."IsActive" = true ORDER BY course."CourseCode" ASC;')
@@ -425,7 +426,7 @@ taManager.get('/getAllCoursesForAllActiveTas', function (req, res) {
     });
 });
 
-taManager.get('/getAllCoursesForTa', function (req, res) {
+taManager.get('/getAllCoursesForTa', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var userId = req.query.userId;
     db.query('SELECT course."CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
         '"HasLab" AS "hasLab", "IsActive" AS "isActive", assign."AssignType" as "assignType" FROM ' + schema + '."CourseTaAssigns" assign JOIN ' + schema + '."Course" course ' + 
@@ -438,7 +439,7 @@ taManager.get('/getAllCoursesForTa', function (req, res) {
     });
 });
 
-taManager.get('/getAllSupervisorsForTa', function (req, res) {
+taManager.get('/getAllSupervisorsForTa', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var userId = req.query.userId;
     db.query('SELECT supervisor."SupervisorId" AS "supervisorId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email" ' +
         'FROM ' + schema + '."SupervisorTaAssigns" assign JOIN ' + schema + '."Supervisor" supervisor ON assign."SupervisorId" = supervisor."SupervisorId" WHERE assign."UserId" = $1 ' +
@@ -453,7 +454,7 @@ taManager.get('/getAllSupervisorsForTa', function (req, res) {
 
 // =========================================== SUPERVISORS PAGE ===========================================
 
-taManager.get('/getAllSupervisors', function (req, res) {
+taManager.get('/getAllSupervisors', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     db.query('SELECT "SupervisorId" AS "supervisorId", "FirstName" AS "firstName", "LastName" AS "lastName", "Email" AS "email" FROM ' + schema + '."Supervisor" ORDER BY "LastName" ASC;')
         .then(function (data) {
             res.send(data);
@@ -463,7 +464,7 @@ taManager.get('/getAllSupervisors', function (req, res) {
         });
 });
 
-taManager.post('/addSupervisor', function (req, res) {
+taManager.post('/addSupervisor', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var supervisor = req.body;
     db.query('INSERT INTO ' + schema + '."Supervisor"("FirstName", "LastName", "Email") ' +
         'VALUES ($1, $2, $3);', [supervisor.firstName, supervisor.lastName, supervisor.email])
@@ -475,7 +476,7 @@ taManager.post('/addSupervisor', function (req, res) {
         });
 });
 
-taManager.post('/editSupervisor', function (req, res) {
+taManager.post('/editSupervisor', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var supervisor = req.body;
     db.query('UPDATE ' + schema + '."Supervisor" SET "FirstName" = $1, "LastName" = $2, "Email" = $3 WHERE "SupervisorId" = $4',
         [supervisor.firstName, supervisor.lastName, supervisor.email, supervisor.supervisorId])
@@ -487,7 +488,7 @@ taManager.post('/editSupervisor', function (req, res) {
         });
 });
 
-taManager.post('/removeSupervisor', function (req, res) {
+taManager.post('/removeSupervisor', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var supervisor = req.body;
     db.task(function (t) {
         return t.query('DELETE FROM ' + schema + '."SupervisorTaAssigns" WHERE "SupervisorId" = $1', supervisor.supervisorId)
@@ -503,7 +504,7 @@ taManager.post('/removeSupervisor', function (req, res) {
         });
 });
 
-taManager.get('/getAllTasForSupervisor', function (req, res) {
+taManager.get('/getAllTasForSupervisor', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var supervisorId = req.query.supervisorId;
     db.query('SELECT ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" AS "studentNumber", ta."StudentType" AS "studentType", ' +
         'ta."IsActive" AS "isActive" FROM ' + schema + '."SupervisorTaAssigns" supervisor INNER JOIN ' + schema + '."TeachingAssistant" ta ON supervisor."UserId" = ta."UserId" WHERE supervisor."SupervisorId" = $1 GROUP BY ta."UserId" ORDER BY ta."LastName" ASC', [supervisorId])
@@ -515,7 +516,7 @@ taManager.get('/getAllTasForSupervisor', function (req, res) {
         });
 });
 
-taManager.get('/getUnassignedTasForSupervisor', function (req, res) {
+taManager.get('/getUnassignedTasForSupervisor', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var supervisorId = req.query.supervisorId;
     db.query('SELECT  ta."UserId" AS "userId", ta."FirstName" AS "firstName", ta."LastName" AS "lastName", ta."Email" AS "email", ta."StudentNumber" as "studentNumber" ' +
         'FROM ' + schema + '."TeachingAssistant" ta LEFT OUTER JOIN (SELECT * FROM ' + schema + '."SupervisorTaAssigns" WHERE "SupervisorId" = $1) supervisor ' +
@@ -641,7 +642,7 @@ var largestAssignTaToCourse = function (ta, course, assignmentSchedule) {
     }
 };
 
-taManager.post('/autoAssignTas', function (req, res) {
+taManager.post('/autoAssignTas', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     db.task(t => {
         return t.query('SELECT "CourseId" AS "courseId", "CourseCode" AS "courseCode", "Title" AS "title", "StudentCount" AS "studentCount", "StartDate" AS "startDate", "EndDate" AS "endDate", ' +
             '"HasLab" AS "hasLab", "IsActive" AS "isActive", (SELECT count(*) FROM ' + schema + '."CourseTaAssigns" WHERE "CourseId" = course."CourseId" AND "AssignType" = \'Half\') AS "halfAssignCount", ' +
@@ -744,7 +745,7 @@ taManager.post('/autoAssignTas', function (req, res) {
     });
 });
 
-taManager.post('/assignTaToCourse', function (req, res) {
+taManager.post('/assignTaToCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var userId = req.body.userId;
     var courseId = req.body.courseId;
     var assignType = req.body.assignType;
@@ -787,7 +788,7 @@ taManager.post('/assignTaToCourse', function (req, res) {
     
 });
 
-taManager.post('/unassignTaToCourse', function (req, res) {
+taManager.post('/unassignTaToCourse', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var assign = req.body;
     db.query('DELETE FROM ' + schema + '."CourseTaAssigns" WHERE "UserId" = $1 AND "CourseId" = $2', [assign.userId, assign.courseId])
         .then(function (data) {
@@ -798,7 +799,7 @@ taManager.post('/unassignTaToCourse', function (req, res) {
         });
 });
 
-taManager.post('/assignTaToSupervisor', function (req, res) {
+taManager.post('/assignTaToSupervisor', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var assign = req.body;
     db.query('INSERT INTO ' + schema + '."SupervisorTaAssigns"("UserId", "SupervisorId") ' +
         'VALUES ($1, $2);', [assign.userId, assign.supervisorId])
@@ -810,7 +811,7 @@ taManager.post('/assignTaToSupervisor', function (req, res) {
         });
 });
 
-taManager.post('/unassignTaToSupervisor', function (req, res) {
+taManager.post('/unassignTaToSupervisor', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var assign = req.body;
     db.query('DELETE FROM ' + schema + '."SupervisorTaAssigns" WHERE "UserId" = $1 AND "SupervisorId" = $2', [assign.userId, assign.supervisorId])
         .then(function (data) {
@@ -821,7 +822,7 @@ taManager.post('/unassignTaToSupervisor', function (req, res) {
         });
 });
 
-taManager.post('/updateCourseTaAssignment', function (req, res) {
+taManager.post('/updateCourseTaAssignment', connectEnsureLogin.ensureLoggedIn('/loginFail'), function (req, res) {
     var assign = req.body;
     db.query('UPDATE ' + schema + '."CourseTaAssigns" SET "AssignType" = $1 WHERE "UserId" = $2 AND "CourseId" = $3', [assign.assignType, assign.userId, assign.courseId])
         .then(function (data) {
